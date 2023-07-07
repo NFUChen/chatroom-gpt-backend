@@ -58,7 +58,8 @@ class UserValidator:
         if not self.EMAIL_REGEX.match(self.email):
             self.error_messages.append(ValidatorError.INVALID_EMAIL.value)
             return
-
+    
+    def _validate_duplicate_user(self) -> None:
         if user_db_manager.is_duplicate_user(self.email):
             self.error_messages.append(ValidatorError.DUPLICATE_USER.value)
 
@@ -66,6 +67,7 @@ class UserValidator:
         validators = (
             self._validate_null_attr,
             self._validate_email,
+            self._validate_duplicate_user,
         )
         for validator in validators:
             validator()
