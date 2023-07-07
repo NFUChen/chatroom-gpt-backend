@@ -32,7 +32,7 @@ class UserDatabaseManager:
             }
         }
         response = requests.post(
-            "http://producer:8081/produce", json= post_json
+            "http://producer:8080/produce", json= post_json
         )
         return response.json()
 
