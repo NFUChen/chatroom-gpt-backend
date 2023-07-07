@@ -4,13 +4,16 @@ import json
 class SessionStore:
     def __init__(self, host: str, port: int) -> None:
         self.redis_client = redis.Redis(host, port, db=0)
-        self.expired_time = 180
+        self.expired_time = 60 * 60 * 24 * 3
 
     def add_user_in_session(self, user_dict: dict[str, str]) -> str:
         sid = generate_unique_random_string(100)
         user_json = json.dumps(user_dict)
         self.redis_client.setex(sid, self.expired_time, user_json)
         return sid
+    
+    def remove_sid_from_session(self, sid: str) -> None:
+        self.redis_client.delete(sid)
     
     def refresh_session(self,sid: str) -> None:
         user_dict_byte = self.redis_client.get(sid)
