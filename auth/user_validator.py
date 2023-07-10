@@ -29,9 +29,9 @@ class UserValidator:
             (user_db_manager.is_duplicate_user(self.email), ValidatorError.DUPLICATE_USER),
         }
 
-        for is_valid, error_code  in validation_func_with_error_code:
+        for is_valid, error_code in validation_func_with_error_code:
             if is_valid:
-                return error_code.value
+                return {"error": error_code.value}
 
     
     
