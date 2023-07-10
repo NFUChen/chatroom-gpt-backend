@@ -8,25 +8,6 @@ class ValidatorError(Enum):
     INVALID_EMAIL = "Email is not valid"
     DUPLICATE_USER = "Duplicate user"
 
-class ValidationResult:
-    
-    def __init__(self, error_messages: list[str]) -> None:
-        self.error_messages = error_messages
-
-    def is_valid(self) -> bool:
-        return len(self.error_messages) == 0
-    
-    @property
-    def message(self) -> str:
-        return "Validation passed" if self.is_valid() else "Validation failed"
-    
-    
-    def to_json(self) -> dict[str, str]:
-        return {"failed_items": self.error_messages,
-                "message": self.message,
-                "is_valid": self.is_valid()
-            }
-
 class UserValidator:
     EMAIL_REGEX = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
     def __init__(self, email: str, user_name: str, password: str) -> None:
@@ -39,40 +20,19 @@ class UserValidator:
         )
         self.error_messages: list[str] = []
 
-    def _validate_null_attr(self) -> None:
-        attr_lookup =(
-            (self.email, ValidatorError.NULL_EMAIL), 
-            (self.user_name, ValidatorError.NULL_USER_NAME), 
-            (self.password , ValidatorError.NULL_PASSWORD)
-        )
+    def validate(self) -> str | None:
+        validation_func_with_error_code:tuple[bool, ValidatorError] = {
+            (self.email is None, ValidatorError.NULL_EMAIL), 
+            (self.user_name is None, ValidatorError.NULL_USER_NAME), 
+            (self.password is None , ValidatorError.NULL_PASSWORD),
+            (not self.EMAIL_REGEX.match(self.email), ValidatorError.INVALID_EMAIL),
+            (user_db_manager.is_duplicate_user(self.email), ValidatorError.DUPLICATE_USER),
+        }
 
+        for is_valid, error_code  in validation_func_with_error_code:
+            if is_valid:
+                return error_code.value
 
-        for attr, error in attr_lookup:
-            if attr is None:
-                self.error_messages.append(error.value)
-
-    def _validate_email(self) -> None:
-        if self.email is None:
-            return
-        
-        if not self.EMAIL_REGEX.match(self.email):
-            self.error_messages.append(ValidatorError.INVALID_EMAIL.value)
-            return
-    
-    def _validate_duplicate_user(self) -> None:
-        if user_db_manager.is_duplicate_user(self.email):
-            self.error_messages.append(ValidatorError.DUPLICATE_USER.value)
-
-    def validate(self) -> ValidationResult:
-        validators = (
-            self._validate_null_attr,
-            self._validate_email,
-            self._validate_duplicate_user,
-        )
-        for validator in validators:
-            validator()
-        
-        return ValidationResult(self.error_messages)
     
     
         

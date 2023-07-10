@@ -7,7 +7,7 @@ from authenticator import Authenticator
 from user_database_manager import user_db_manager
 from user import User
 from user_validator import UserValidator
-from login_manager import LoginManager, LoginResponse
+from login_manager import LoginManager
 import datetime
 app = Flask(__name__)
 CORS(app)
@@ -26,15 +26,14 @@ def register():
     email = user_info.get("email")
     user_name = user_info.get("user_name")
     pwd = user_info.get("password")
-    validation_result = UserValidator(email, user_name, pwd).validate()
-    validation_json = validation_result.to_json()
-    if not validation_result.is_valid():
-        return validation_json, 400
+    error = UserValidator(email, user_name, pwd).validate()
+    if error:
+        return error, 400
     
     hashed_pwd = Authenticator.hash_password(pwd)
     user_db_manager.register_user(email, user_name, hashed_pwd)
     server_print(f"Saving to db with {email}, {user_name}")
-    return validation_json, 200
+    return "register successfully", 200
 
 @app.route("/login", methods= ["POST"])
 def login():
