@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 @dataclass
 class AiChatMessage:
+    room_id: str
     role: str
     content: str
     user_name: str
@@ -19,6 +20,7 @@ class AiChatMessage:
 
 @dataclass
 class RegularChatMessage:
+    root_id: str
     user_name: str
     content: str
     def to_dict(self) -> dict[str, str]:
@@ -76,18 +78,18 @@ class RoomManager:
     def get_all_room_ids(self) -> list[str]:
         return list(self.rooms_dict.keys())
     
-    def get_room_by_id(self, room_id: str) -> Room | None:
+    def get_room_by_id(self, room_id: str) -> Room:
         if room_id not in self.rooms_dict:
-            return
+            raise ValueError(f"Room {room_id} not found")
 
         return self.rooms_dict[room_id]
     
     def add_room(self, room: Room) -> None:
         self.rooms_dict[room.room_id] = room
     
-    def pop_room(self, room_id: str) -> Room | None:
+    def pop_room(self, room_id: str) -> Room:
         if room_id not in self.rooms_dict:
-            return
+            raise ValueError(f"Room {room_id} not found")
         return self.rooms_dict.pop(room_id)
     
     def get_all_rooms_info(self) -> list[dict[str, str]]:

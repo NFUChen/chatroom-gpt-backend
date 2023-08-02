@@ -1,7 +1,6 @@
 from flask import Flask, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, leave_room, emit, send
-import os
 
 
 from chat_room import RoomManager, Room, create_new_room
