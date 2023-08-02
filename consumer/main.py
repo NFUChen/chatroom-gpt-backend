@@ -1,19 +1,26 @@
 
 import ast
-from database_manager import db_manager
+from mysql_database_manager import mysqldb_manger
+from utils import create_all_tables
 from consumer import Consumer
+
 consumer = Consumer("guest", "guest", "rabbitmq")
 
-def save_doc(ch, method, properties, body):
+def insert_user(ch, method, properties, body):
     print(" [x] Received %r" % body)
     message_dict = ast.literal_eval(body.decode())
-    db_name = message_dict["db"]
-    collection_name = message_dict["collection"]
-    doc = message_dict["doc"]
-    db_manager.insert_data_into_db(db_name, collection_name, doc)
+    user = message_dict["data"]
+    user_email = user["uesr_email"]
+    uesr_name = user["user_name"]
+    pwd = user["password"]
+    mysqldb_manger.insert_user(user_email,user_email, uesr_name,pwd)
 
-queues = ["user"]
-for queue in queues:
-    consumer.consume(queue, save_doc)
+queue_with_callbacks = (
+    ("user", insert_user),
+)
+for queue, callback in queue_with_callbacks:
+    consumer.consume(queue, callback)
 
+
+create_all_tables()
 consumer.start_consuming()
