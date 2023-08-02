@@ -30,7 +30,7 @@ class SessionStore:
     def get_user_dict_from_session(self, sid: str) -> dict[str, str]:
         user_dict_byte = self.redis_client.get(sid)
         if user_dict_byte is None:
-            return None
+            return
         return json.loads(user_dict_byte.decode())
     
 session_store = SessionStore("redis", 6379)
