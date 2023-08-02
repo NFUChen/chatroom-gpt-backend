@@ -15,9 +15,7 @@ services:
       context: ./auth
       dockerfile: dockerfile
     ports:
-      - "8080:8080"
-    environment:
-      - PORT=8080
+      - "8080:5000"
 
   producer:
     container_name: producer
@@ -26,7 +24,7 @@ services:
       context: ./producer
       dockerfile: dockerfile
     ports:
-      - "8081:8080"
+      - "8081:5000"
     depends_on:
       - rabbitmq
   consumer:
