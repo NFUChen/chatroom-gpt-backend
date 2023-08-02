@@ -35,7 +35,7 @@ class MySqlDataBaseManaer:
             return result
         except Exception as e:
             print(f"Error while executing query: {e}")
-    def insert_user(self, user_email,user_name, password) -> None:
+    def insert_user(self, user_email: str,user_name: str, password: str) -> Any:
         sql = "INSERT INTO users (user_email, user_name, password) VALUES (%s, %s, %s)"
         return self._execute(sql, (user_email ,user_name, password))
 
