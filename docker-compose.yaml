@@ -16,6 +16,15 @@ services:
       dockerfile: dockerfile
     ports:
       - "8080:5000"
+  query_manager:
+    container_name: query_manager
+    restart: always
+    build:
+      context: ./query_manager
+      dockerfile: dockerfile
+    ports:
+      - "8082:5000"
+
 
   producer:
     container_name: producer
