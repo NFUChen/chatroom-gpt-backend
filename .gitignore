@@ -166,3 +166,4 @@ cython_debug/
 mongo_data/
 rabbitmq_data/
 redis_data/
+mysql_data/
