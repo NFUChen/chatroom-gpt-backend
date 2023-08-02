@@ -27,7 +27,7 @@ class SessionStore:
             return False
         return True
     
-    def get_user_dict_from_session(self, sid: str) -> dict[str, str]:
+    def get_user_dict_from_session(self, sid: str) -> dict[str, str] | None:
         user_dict_byte = self.redis_client.get(sid)
         if user_dict_byte is None:
             return

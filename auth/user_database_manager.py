@@ -1,57 +1,53 @@
-import pymongo
 from user import User
 import requests
 class UserDatabaseManager:
-    CREDENTIALS_DB = "credentials"
-    USER = "USER"
-    def __init__(self,host: str, port: int, user_name: str, password: str) -> None:
-        url = f"mongodb://{user_name}:{password}@{host}:{port}/"
-        self.mongo_client = pymongo.MongoClient(url)
-        self.user_col = self.mongo_client[self.CREDENTIALS_DB][self.USER]
+    def __init__(self) -> None:
+        self.query_api = f"http://query_manager:5000/query"
+        self.produce_api =  "http://producer:5000/produce"
+        
+
+    def _query_user_by_email(self, user_email: str) -> dict[str, str] | None:
+
+        query_dict = {"query": f"SELECT * FROM users where user_email = '{user_email}'"}
+        users = requests.post(self.query_api, json= query_dict).json()["data"]
+        if len(users) == 0:
+            return
+    
+        return users.pop()
 
     def is_duplicate_user(self, user_email: str) -> bool:
         if user_email is None:
             return False
         
-        doc = self.user_col.find_one(
-            {"email": user_email}
-        )
-        if doc is None:
+        user = self._query_user_by_email(user_email)
+        if user is None:
             return False
+        
         return True
 
-    def register_user(self, email: str, user_name: str, hashed_password: str) -> None:
+    def register_user(self, email: str, user_name: str, hashed_password: str) -> dict[str, str]:
         post_json = {
             "queue": "user",
-            "db": "credentials",
-            "collection": "USER",
-            "doc": {
-                "email": email,
+            "data": {
+                "user_email": email,
                 "user_name": user_name,
-                "hashed_password": hashed_password
+                "password": hashed_password
             }
         }
         response = requests.post(
-            "http://producer:8080/produce", json= post_json
+            self.produce_api, json= post_json
         )
         return response.json()
 
         
-    def get_user_by_email(self, email: str) -> User | None:
-        doc = self.user_col.find_one(
-            {"email": email}
-        )
-        if doc is None:
-            return
-        doc.pop("_id")
-        return User(**doc)
+    def get_user_by_email(self, user_email: str) -> User:
+        user_dict = self._query_user_by_email(user_email)
+        if user_dict is None:
+            raise ValueError("User not found")
 
-    
+        return User(**user_dict)
 
+user_db_manager = UserDatabaseManager()
 
-
-
-
-
-
-user_db_manager = UserDatabaseManager("mongo", 27017, "chat-admin", "chatchat-admin")
+if __name__ == "__main__":
+    print(user_db_manager.get_user_by_email("wich@sram.com").to_dict())

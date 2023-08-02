@@ -14,24 +14,36 @@ class UserValidator:
         self.email = email
         self.user_name = user_name
         self.password = password
+    
+    def is_null_email(self) -> bool:
+        return self.email is None
 
-        self.validators_with_error_message = (
-            (self.email, ValidatorError.NULL_EMAIL),
-        )
-        self.error_messages: list[str] = []
+    def is_null_user_name(self) -> bool:
+        return self.user_name is None
+    
+    def is_null_password(self) -> bool:
+        return self.password is None
+    
+    def is_not_match_email_pattern(self) -> bool:
+        return not self.EMAIL_REGEX.match(self.email)
+
+    def is_duplicate_user(self) -> bool:
+        return user_db_manager.is_duplicate_user(self.email)
 
     def validate(self) -> str | None:
-        validation_func_with_error_code:tuple[bool, ValidatorError] = {
-            (self.email is None, ValidatorError.NULL_EMAIL), 
-            (self.user_name is None, ValidatorError.NULL_USER_NAME), 
-            (self.password is None , ValidatorError.NULL_PASSWORD),
-            (not self.EMAIL_REGEX.match(self.email), ValidatorError.INVALID_EMAIL),
-            (user_db_manager.is_duplicate_user(self.email), ValidatorError.DUPLICATE_USER),
-        }
+        validation_func_with_error_code:tuple[bool, ValidatorError] = (
+            (self.is_null_email, ValidatorError.NULL_EMAIL), 
+            (self.is_null_user_name, ValidatorError.NULL_USER_NAME), 
+            (self.is_null_password , ValidatorError.NULL_PASSWORD),
+            (self.is_not_match_email_pattern, ValidatorError.INVALID_EMAIL),
+            (self.is_duplicate_user, ValidatorError.DUPLICATE_USER),
+        )
 
-        for is_valid, error_code in validation_func_with_error_code:
-            if is_valid:
-                return {"error": error_code.value}
+        for is_error_func, error_code in validation_func_with_error_code:
+            if is_error_func():
+                raise ValueError(error_code.value)
+            
+        
 
     
     
