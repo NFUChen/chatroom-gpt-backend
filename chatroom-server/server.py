@@ -2,13 +2,11 @@ from flask import Flask, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, leave_room, emit, send
 import os
-import json
-import requests
+
 
 from chat_room import RoomManager, Room, create_new_room
 from user import User
-
-PORT = os.environ['PORT'] 
+from utils import handle_server_errors
 
 app = Flask(__name__)
 CORS(app)
@@ -59,58 +57,43 @@ def on_leave(data):
 
 
 @app.route("/create_room", methods=["POST"])
+@handle_server_errors
 def create_room():
     request_json = request.get_json()
     room_name = request_json["room_name"]
     new_room = create_new_room(room_name)
     room_manager.add_room(new_room)
-    return {
-        "message": f"room [{new_room.room_id}, {new_room.room_name}] created sucessfully",
-        "room_info": new_room.to_dict(),
-    }, 200
+    return new_room.to_dict()
 
 @app.route("/delete_room", methods=["POST"])
+@handle_server_errors
 def delete_room():
     request_json = request.get_json()
     room_id = request_json["room_id"]
     popped_room =  room_manager.pop_room(room_id)
-    return {
-        "message": f"room [{room_id}, {popped_room.room_name} ] deleted sucessfully",
-        "room_info": popped_room.to_dict(),
-    }, 200
+    return popped_room.to_dict()
 
 @app.route("/room_info", methods=["POST"])
+@handle_server_errors
 def get_room_info():
     request_json = request.get_json()
     room_id = request_json["room_id"]
-    room: Room = room_manager.get_room_by_id(room_id)
-    if room is None:
-        return {
-            "message": f"room {room_id} does not exist, please enter one of the following {room_manager.get_all_room_ids()}",
-            "room_info": None,
-        }, 404
-
-    return {
-        "message": f"room {room_id} found",
-        "room_info": room.to_dict(),
-    }, 200
+    room = room_manager.get_room_by_id(room_id)
+    return room.to_dict()
 
 @app.route("/emit_message_to_room", methods=["POST"])
+@handle_server_errors
 def emit_message_to_room():
     request_json = request.get_json()
     room_id = request_json("room_id")
     message = request_json("message")
     sio.emit('on_chat_bot_message_message', {"message": message}, to=room_id)
-    return {
-        "message": f"message [{message}] sent to room [{room_id}]",
-    }, 200
+    return f"message [{message}] sent to room [{room_id}]"
 
 @app.route("/list_room")
+@handle_server_errors
 def list_room():
-    return {
-        "message": "list of all rooms",
-        "room_info": room_manager.get_all_rooms_info(),
-    }, 200
+    return room_manager.get_all_rooms_info()
 
 # add ai message
 
@@ -120,5 +103,5 @@ def list_room():
 
 
 if __name__ == "__main__":
-    sio.run(app, host="0.0.0.0", debug= False, port= PORT)
+    sio.run(app, host="0.0.0.0", debug= False)
     
