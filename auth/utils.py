@@ -26,9 +26,10 @@ def handle_server_errors(func):
                     "error": None
             }
             if "sid" in result:
+                sid = result.pop("sid")
                 cookie_response = jsonify(result_json)
                 expired_time_stamp = datetime.datetime.now() + datetime.timedelta(seconds= session_store.expired_time)
-                cookie_response.set_cookie("sid", result["sid"], expires= expired_time_stamp)
+                cookie_response.set_cookie("sid", sid, expires= expired_time_stamp)
                 return cookie_response
             return result_json, 200
         
