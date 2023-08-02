@@ -16,16 +16,14 @@ def index():
 Signature:
     {
         "queue": str,
-        "db": str,
-        "collection": str,
-        "doc": dict[str, str]
+        "data": dict[str, Any],
     }
 '''
 
 @app.route("/produce", methods= ["POST"])
 def produce():
     request_json: dict[str, str] = request.get_json()
-    keys = ["queue", "db", "collection", "doc"]
+    keys = ["queue", "data"]
     missing_keys = []
     for key in keys:
         value = request_json.get(key)
@@ -33,13 +31,12 @@ def produce():
             continue
         missing_keys.append(key)
     if len(missing_keys) != 0:
-        return {"message": f"Missing {missing_keys}"}, 400
-    
+        return {"data": f"Missing {missing_keys}"}, 400
 
     queue = request_json.pop("queue")
 
     producer.publish(queue, str(request_json))
-    return {"message": f"Message {request_json} published to {queue}"}, 200
+    return {"data": f"Message {request_json} published to {queue}"}, 200
 
 
 if __name__ == "__main__":
