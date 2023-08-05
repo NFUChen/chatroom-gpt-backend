@@ -3,6 +3,8 @@ import traceback
 from flask import jsonify
 import datetime
 from session_store import session_store 
+import random
+import string
 def get_error_detail(e: Exception):
     error_name = e.__class__.__name__
     file_name = traceback.extract_tb(e.__traceback__)[-1].filename
@@ -14,6 +16,12 @@ def get_error_detail(e: Exception):
         'line_number': line_number,
         'error_message': error_message
     }
+
+
+def generate_unique_random_string(string_len: int = 50) -> str:
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(random.choice(characters) for _ in range(string_len))
+    return random_string
 
 
 def handle_server_errors(func):

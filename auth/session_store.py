@@ -1,4 +1,4 @@
-from util import generate_unique_random_string
+from utils import generate_unique_random_string
 import redis
 import json
 class SessionStore:

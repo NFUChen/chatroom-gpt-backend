@@ -32,8 +32,8 @@ def create_all_tables() -> None:
 
         # Commit the changes to the database
         connection.commit()
-    except pymysql.Error as e:
-        print(f"Error: {e}")
+    except pymysql.Error as error:
+        print(f"Error: {error}")
     
 if __name__ == "__main__":
     create_all_tables()
