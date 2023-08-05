@@ -2,9 +2,10 @@ import functools
 import traceback
 from flask import jsonify
 import datetime
-from session_store import session_store 
 import random
 import string
+
+EXPIRE_TIME =  60 * 60 * 24 * 3
 def get_error_detail(e: Exception):
     error_name = e.__class__.__name__
     file_name = traceback.extract_tb(e.__traceback__)[-1].filename
@@ -36,7 +37,7 @@ def handle_server_errors(func):
             if "sid" in result:
                 sid = result.pop("sid")
                 cookie_response = jsonify(result_json)
-                expired_time_stamp = datetime.datetime.now() + datetime.timedelta(seconds= session_store.expired_time)
+                expired_time_stamp = datetime.datetime.now() + datetime.timedelta(seconds= EXPIRE_TIME)
                 cookie_response.set_cookie("sid", sid, expires= expired_time_stamp)
                 return cookie_response
             return result_json, 200

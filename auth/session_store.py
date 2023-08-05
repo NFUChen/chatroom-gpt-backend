@@ -1,10 +1,13 @@
 from utils import generate_unique_random_string
 import redis
 import json
+
+EXPIRE_TIME =  60 * 60 * 24 * 3
+
 class SessionStore:
     def __init__(self, host: str, port: int) -> None:
         self.redis_client = redis.Redis(host, port, db=0)
-        self.expired_time = 60 * 60 * 24 * 3
+        self.expired_time = EXPIRE_TIME
 
     def add_user_in_session(self, user_dict: dict[str, str]) -> str:
         sid = generate_unique_random_string(100)
