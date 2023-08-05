@@ -5,7 +5,8 @@ import requests
 import socket
 from openai_utils import num_tokens_from_messages
 from chatbot import ChatBot
-
+from utils import handle_server_errors
+import requests
 app = Flask(__name__)
 CORS(app)
 
@@ -26,19 +27,27 @@ def index():
     return f"Welcome to a server for answering question {host}", 200
 
 @app.route("/answer", methods=["POST"])
+@handle_server_errors
 def answer():
     request_json = request.get_json()
     messages = request_json["messages"]
     api_key = request_json["api_key"]
     room_id = request_json["room_id"]
+    user_id = request_json["user_id"]
+    
     bot = ChatBot(api_key, messages)
     for current_message in bot.answer():
         resp = emit_message_to_room(room_id, current_message)
         server_print(resp)
-    
-    bot.bot_reponse["room_id"] = room_id
 
-    return bot.bot_reponse, 200
+    
+    
+
+    return {
+        **bot.bot_response.to_dict(),
+        "user_id": user_id,
+        "room_id": room_id
+    }
         
 
 

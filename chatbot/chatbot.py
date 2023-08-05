@@ -1,13 +1,14 @@
 from typing import Literal, Iterable
 import openai
 from openai_utils import num_tokens_from_messages
+from utils import create_pompt
 from datetime import datetime, timedelta
 import traceback
-import requests
+import uuid
 import dataclasses
-
 @dataclasses.dataclass
 class ChatBotResponse:
+    response_id: str
     datetime: str
     messages: list[dict[str, str]]
     answer: str
@@ -34,74 +35,51 @@ def log_error(exception: Exception) -> None:
             "queue": "error",
             "db": "error",
             "collection": "chatbot",
-            "doc": {
-               create_error_document(exception)
-            }
+            "doc": create_error_document(exception)
         }
     
-    response = requests.post("http://producer:8080/produce", json= post_json)
-    return response.json()
-
-def log_response(response: ChatBotResponse) -> None:
-    post_json = {
-            "queue": "response",
-            "db": "chatbot",
-            "collection": "chatbot",
-            "doc": {
-                response.to_dict()
-            }
-        }
-    
-    response = requests.post("http://producer:8080/produce", json= post_json)
-    return response.json()
+    # response = requests.post("http://producer:8080/produce", json= post_json)
+    # return response.json()
 
 Role =  Literal["system", "user", "assistant"]
 
 class ChatBot:
-    PROMPT = f"""
-    You are performing a role of a friendly and nice assistant. 
-    You will receive a chat history in the context of multiple people talking to each other.
-    Yor job is to answer the question for a user.
-    Please strictly follow the following rules of answering the given question
-        - Don't make up an answer if you don't know what user is asking.
-        - Politely states tell the user you don't know the answoer 
-          if the given messages lack enough context for you to clearly understand the question.
-        - Don't be rude, sarcastic to the user.
-        - Provide detailed explaination or exaples if the your answer is not easily understandable.
-    """
     def __init__(self, api_key: str, chat_messages: list[dict[str, str]]) -> None:
         self.messages = [self._get_system_prompt(), *chat_messages]
-        print(self.messages)
         openai.api_key = api_key
         self.source_token_count = num_tokens_from_messages(self.messages)
+        self.reponse_message_token_count = 0 
         self.current_message = ""
-        self.bot_reponse: ChatBotResponse | None = None
+        self.MAX_TOKENS_ACCEPTED = 15500
 
     @property
-    def model(self) -> str:
+    def model(self) -> str | None:
         if self.source_token_count < 3500:
             return "gpt-3.5-turbo" # 4k
-        return "gpt-3.5-turbo-16k"
+        if self.source_token_count < self.MAX_TOKENS_ACCEPTED:
+            return "gpt-3.5-turbo-16k"
+        return
 
     def _get_system_prompt(self) -> list[dict[str, str]]:
-        return {"role": "system", "content": self.PROMPT}
+        return {"role": "system", "content": create_pompt()}
         
         
     def _update_current_message(self, msg: str) -> None:
         self.current_message += msg
 
-    def _log_response(self, response: list[dict[str, str]]) -> None:
-        ...
-
     def answer(self) -> Iterable[str]:
         chosen_model = self.model
+        if chosen_model is None:
+            raise ValueError(f"Token exceed max context length: {self.MAX_TOKENS_ACCEPTED}, getting {self.source_token_count}")
+
+
+        print(f"Choosing {chosen_model} to answer the question.")
         try:
             generator = openai.ChatCompletion.create(
                 model= chosen_model,
                 stream= True,
                 messages= self.messages
             )
-            self._update_current_message("assistant:")
             yield self.current_message
             for response in generator:
                 choice = response['choices'][0]["delta"]
@@ -120,7 +98,8 @@ class ChatBot:
                 "role": "assistant", "content": self.current_message
             }
             ])
-            self.bot_reponse = ChatBotResponse(
+            self.bot_response = ChatBotResponse(
+                response_id= str(uuid.uuid4()),
                 datetime= get_taipei_time(),
                 messages= self.messages,
                 answer= self.current_message,
@@ -135,14 +114,10 @@ if __name__ == "__main__":
     messages = [
         {
             "role": "user",
-            "content": "I don't kown how to learn python."
-        },
-        {
-            "role": "user",
-            "content": "How to learn python"
+            "content": "怎麼學烹飪"
         }
     ]
     bot = ChatBot("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", messages)
     for msg in bot.answer():
         print(msg)
-    print(bot.bot_reponse)
+    print(bot.bot_reponse.to_dict())
