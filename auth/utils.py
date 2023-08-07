@@ -8,14 +8,16 @@ import string
 EXPIRE_TIME =  60 * 60 * 24 * 3
 def get_error_detail(e: Exception):
     error_name = e.__class__.__name__
-    file_name = traceback.extract_tb(e.__traceback__)[-1].filename
-    line_number = traceback.extract_tb(e.__traceback__)[-1].lineno
+    trace_back = traceback.extract_tb(e.__traceback__)
+    file_name = trace_back[-1].filename
+    line_number = trace_back[-1].lineno
     error_message = str(e)
     return {
         'error_name': error_name,
         'file_name': file_name,
         'line_number': line_number,
-        'error_message': error_message
+        'error_message': error_message,
+        "trace_back": str(trace_back)
     }
 
 
@@ -45,6 +47,6 @@ def handle_server_errors(func):
         except Exception as error:
             return {
                 "data": None,
-                "error": str(error)
+                "error": get_error_detail(error)
             }, 200  # Return JSON response with error message and status code 500
     return decorated
