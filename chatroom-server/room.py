@@ -1,9 +1,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from enum import Enum
-from typing import Literal
-from dataclasses import dataclass
-import datetime
+from chat_message import MessageType, ChatMessage
 import uuid
 from room_database_manager import room_db_manager
 
@@ -11,28 +9,9 @@ class RoomType(Enum):
     PUBLIC = "public"
     PRIVATE = "private"
 
-MessageType = Literal["regular", "ai"]
 
-@dataclass
-class ChatMessage:
-    message_id: str
-    message_type: MessageType
-    user_id: int
-    room_id: str
-    content: str
-    created_at: datetime.datetime
-    modified_at: datetime.datetime | None = None
 
-    def to_dict(self) -> dict[str, str]:
-        dict_copy = deepcopy(self.__dict__)
-        dict_copy["created_at"] = str(dict_copy["created_at"])
-        return dict_copy
-    
-    @classmethod
-    def create_chat_message(cls,message_type: str, user_id: str, room_id: str, content: str) -> ChatMessage:
-        message_id = uuid.uuid4()
-        now = datetime.datetime.now()
-        return type(cls)(message_id, message_type, user_id, room_id, content, now, now)
+
 
 class Room:
     MAX_MESSAGE_LENGTH = 50
@@ -100,32 +79,3 @@ class Room:
 
         return dict_copy
         
-class RoomManager:
-    def __init__(self, rooms: list[Room] = []) -> None:
-        self.rooms_dict = {
-            room.room_id: room for room in rooms
-        }
-    
-    def get_room_by_id(self, room_id: str) -> Room:
-        if room_id not in self.rooms_dict:
-            raise ValueError(f"Room {room_id} not found")
-
-        return self.rooms_dict[room_id]
-    
-    def add_room(self, room: Room) -> None:
-
-        # add room to db via publisher
-        room_db_manager.add_room(room)
-        self.rooms_dict[room.room_id] = room
-    
-    def pop_room(self, room_id: str) -> Room:
-        if room_id not in self.rooms_dict:
-            raise ValueError(f"Room {room_id} not found")
-        # delete room to db via publisher
-        target_room = self.rooms_dict[room_id]
-        room_db_manager.delete_room(target_room)
-
-        return self.rooms_dict.pop(room_id)
-    
-    def get_all_rooms_info(self) -> list[dict[str, str]]:
-        return [room.to_dict() for room in self.rooms_dict.values()]

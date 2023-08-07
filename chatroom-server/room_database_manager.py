@@ -1,6 +1,16 @@
-from chat_room import ChatMessage, Room
+from chat_message import ChatMessage
 import requests
-from typing import Any
+from dataclasses import dataclass
+
+@dataclass
+class Room:
+    room_id: str
+    room_name: str
+    owner_id: str
+    is_deleted: bool
+    room_type: str
+
+
 class ChatRoomDataBaseManager:
     def __init__(self) -> None:
         self.query_api = f"http://query_manager:5000/query"

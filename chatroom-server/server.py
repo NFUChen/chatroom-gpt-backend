@@ -4,7 +4,8 @@ from flask_socketio import SocketIO, emit
 
 from chat_room_utils import room_manager
 from utils import handle_server_errors
-from chat_room import Room, ChatMessage
+from room import Room
+from chat_message import ChatMessage
 
 app = Flask(__name__)
 CORS(app)
