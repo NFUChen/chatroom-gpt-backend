@@ -1,3 +1,4 @@
+from typing import Literal
 from flask import request
 from flask import Flask, jsonify
 from flask_cors import CORS
@@ -14,10 +15,12 @@ server_print = lambda content: app.logger.info(content)
 host = socket.gethostname()
 
 
-def emit_message_to_room(room_id: str, message:str) -> requests.Response:
+def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], user_id: str, content:str) -> requests.Response:
     post_json = {
         "room_id": room_id,
-        "message": message
+        "message_type": message_type,
+        "content": content,
+        "user_id": user_id,
     }
     response = requests.post("http://chatroom-server:8080/emit_message_to_room", json= post_json)
     return response
@@ -34,14 +37,13 @@ def answer():
     api_key = request_json["api_key"]
     room_id = request_json["room_id"]
     user_id = request_json["user_id"]
+
+    message_type = "ai"
     
     bot = ChatBot(api_key, messages)
     for current_message in bot.answer():
-        resp = emit_message_to_room(room_id, current_message)
-        server_print(resp)
-
-    
-    
+        resp = emit_message_to_room(room_id, message_type, user_id, current_message)
+        server_print(resp.json())
 
     return {
         **bot.bot_response.to_dict(),
