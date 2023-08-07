@@ -1,16 +1,15 @@
 from flask import Flask, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, leave_room, emit, send
+from flask_socketio import SocketIO, emit
 
-
-from chat_room import RoomManager, Room, create_new_room
-from user import User
+from chat_room_utils import room_manager
 from utils import handle_server_errors
+from chat_room import Room, ChatMessage
 
 app = Flask(__name__)
 CORS(app)
 sio = SocketIO(app, cors_allowed_origins="*")
-room_manager = RoomManager()
+
 
 
 @app.route("/")
@@ -28,39 +27,48 @@ def handle_disconnect():
     print(f'Client {request.sid} disconnected')
     emit('connect_resp', {'message': 'disconnected sucessfully with server'})
 
-@sio.on('join')
-def on_join(data):
-    user_name = data['user_name']
-    room_id = data['room']
-    join_room(room_id)
-    target_room = room_manager.get_room_by_id(room_id)
-    target_room.user_join_room(User(user_name))
-    notification = {
-        "message":"{user_name} has join the room.",
-        "room_info": target_room.to_dict()
-    }
-    sio.emit('room_message_resp', notification, to=room_id)
 
-@sio.on('leave')
-def on_leave(data):
-    user_name = data['user_name']
-    room_id = data['room']
-    leave_room(room_id)
-    target_room = room_manager.get_room_by_id(room_id)
-    target_room.user_leave_room(User(user_name))
-    notification = {
-        "message":"{user_name} has left the room.",
-        "room_info": target_room.to_dict()
-    }
-    sio.emit('room_message_resp', notification, to=room_id)
+@app.route("/join_room", methods = ["POST"])
+@handle_server_errors
+def join_room():
+    request_json = request.get_json()
+    room_id = request_json["room_id"]
+    user_id = request_json["user_id"]
+    user_name = request_json["user_name"]
 
+    room = room_manager.get_room_by_id(room_id)
+    room.user_join_room(user_id)
+    notification = {
+            "message":f"{user_name} has joined the room.",
+            "room_info": room.to_dict()
+    }
+    sio.emit(room.get_socket_event("notification"), notification)
+    return "ok"
+
+@app.route("/leave_room", methods = ["POST"])
+@handle_server_errors
+def leave_room():
+    request_json = request.get_json()
+    room_id = request_json["room_id"]
+    user_id = request_json["user_id"]
+    user_name = request_json["user_name"]
+
+    room = room_manager.get_room_by_id(room_id)
+    room.user_leave_room(user_id)
+
+    notification = {
+            "message":f"{user_name} has left the room.",
+            "room_info": room.to_dict()
+    }
+    sio.emit(room.get_socket_event("notification"), notification)
+    return "ok"
 
 @app.route("/create_room", methods=["POST"])
 @handle_server_errors
 def create_room():
     request_json = request.get_json()
     room_name = request_json["room_name"]
-    new_room = create_new_room(room_name)
+    new_room = Room.create_new_room(room_name)
     room_manager.add_room(new_room)
     return new_room.to_dict()
 
@@ -77,27 +85,43 @@ def delete_room():
 def get_room_info():
     request_json = request.get_json()
     room_id = request_json["room_id"]
+    is_message_included = request_json.get("is_message_included", False)
+    is_user_ids_included = request_json.get("is_user_ids_included", False)
+
     room = room_manager.get_room_by_id(room_id)
-    return room.to_dict()
+    return room.to_dict(
+            is_message_included= is_message_included, 
+            is_user_ids_included= is_user_ids_included
+            )
 
 @app.route("/emit_message_to_room", methods=["POST"])
 @handle_server_errors
 def emit_message_to_room():
     request_json = request.get_json()
-    room_id = request_json("room_id")
-    message = request_json("message")
-    sio.emit('on_chat_bot_message_message', {"message": message}, to=room_id)
-    return f"message [{message}] sent to room [{room_id}]"
+
+    valid_message_type = ["regular", "ai"]
+    message_type = request_json["message_type"]
+    if message_type not in valid_message_type:
+        raise ValueError(f"Invalid message type: {message_type}, please enter one of the following: {valid_message_type}")
+
+    room_id = request_json["room_id"]
+    content = request_json["content"]
+    user_id = request_json["user_id"]
+    room = room_manager.get_room_by_id(room_id)
+    chat_message = ChatMessage.create_chat_message(
+        message_type, user_id, room_id, content
+    )
+    room.add_message(
+        chat_message
+    )
+    
+    sio.emit(room.get_socket_event(message_type), {"message": content})
+    return f"message: {content} with {message_type} is sent to room [{room_id}]"
 
 @app.route("/list_room")
 @handle_server_errors
 def list_room():
     return room_manager.get_all_rooms_info()
-
-# add ai message
-
-# add user message
-
 
 
 
