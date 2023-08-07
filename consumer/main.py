@@ -7,13 +7,12 @@ from consumer import Consumer
 consumer = Consumer("guest", "guest", "rabbitmq")
 
 def insert_user_callback(ch, method, properties, body):
-    datetime_format = "%Y-%m-%d %H:%M:%S.%f"
+    
     message_dict = ast.literal_eval(body.decode())
     mysqldb_manger.insert_user(
        message_dict["user_email"],
        message_dict["user_name"],
        message_dict["password"],
-       datetime.strptime(message_dict["created_at"], datetime_format)
     )
 
 def insert_room_callback(ch, method, properties, body):
@@ -41,14 +40,14 @@ def insert_message_callback(ch, method, properties, body):
     "created_at": message.created_at
     '''
     message_dict = ast.literal_eval(body.decode())
-    
+    datetime_format = "%Y-%m-%d %H:%M:%S.%f"
     mysqldb_manger.insert_message(
         message_dict["message_id"], 
         message_dict["message_type"],
         message_dict["room_id"], 
         message_dict["user_id"], 
         message_dict["content"],
-        message_dict["created_at"]
+        datetime.strptime(message_dict["created_at"], datetime_format)
     )
     
 def delete_room_callback(ch, method, properties, body):
