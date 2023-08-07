@@ -1,6 +1,8 @@
 import pymysql
 from typing import Any
+from datetime import datetime
 class MySqlDataBaseManaer:
+    TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
     def __init__(self, host: str, user: str, password: str, database: str) -> None:
         self.host = host
         self.user = user
@@ -38,6 +40,18 @@ class MySqlDataBaseManaer:
     def insert_user(self, user_email: str,user_name: str, password: str) -> Any:
         sql = "INSERT INTO users (user_email, user_name, password) VALUES (%s, %s, %s)"
         return self._execute(sql, (user_email ,user_name, password))
+
+    def insert_room(self, room_id: str, owner_id: str, room_name: str, room_type: str) -> Any:
+        sql = "INSERT INTO rooms (room_id, owner_id, room_name, room_type) VALUES (%s, %s, %s, %s)"
+        return self._execute(sql, (room_id ,owner_id, room_name, room_type))
+    
+    def delete_room(self, room_id: str) -> Any:
+        sql = f"UPDATE rooms SET is_deleted = 1 WHERE room_id = {room_id}"
+        return self._execute(sql)
+    def insert_message(self, message_id: str, message_type:str, room_id: str, user_id: str, content: str, created_at: datetime):
+
+        sql = "INSERT INTO rooms (message_id, message_type, room_id, user_id, content, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
+        return self._execute(sql, (message_id, message_type, room_id, user_id, content, created_at.strftime(created_at, self.TIMESTAMP_FORMAT)))
 
 mysqldb_manger = MySqlDataBaseManaer("mysql", "root", "chatchat-admin", "db")
 

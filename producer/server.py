@@ -35,7 +35,7 @@ def produce():
 
     queue = request_json.pop("queue")
 
-    producer.publish(queue, str(request_json))
+    producer.publish(queue, str(request_json["data"]))
     return {"data": f"Message {request_json} published to {queue}"}, 200
 
 
