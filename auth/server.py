@@ -47,6 +47,17 @@ def login():
     
     return user_dict
 
+@app.route("/user_status")
+@handle_server_errors
+def user_status():
+    cookie_sid = request.cookies.get("sid")
+    user_dict = session_store.get_user_dict_from_session(cookie_sid)
+    if user_dict is None:
+        raise ValueError(f"Invalid SID: {cookie_sid}")
+    
+    return user_dict
+
+
 
 @app.route("/logout", methods= ["POST"])
 @handle_server_errors
