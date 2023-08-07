@@ -10,7 +10,7 @@ CREATE TABLE
 INSERT INTO users (user_email, user_name, password) VALUES ('openai', 'openai', 'openai');
 
 CREATE TABLE IF NOT EXISTS rooms (
-    room_id INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    room_id VARCHAR(36) PRIMARY KEY NOT NULL,
     owner_id INT NOT NULL,
     room_name VARCHAR(255) NOT NULL UNIQUE,
     room_type VARCHAR(10) NOT NULL,
@@ -21,16 +21,14 @@ CREATE TABLE IF NOT EXISTS rooms (
 CREATE TABLE
     IF NOT EXISTS chat_messages (
         message_id VARCHAR(36) PRIMARY KEY NOT NULL,
-        type VARCHAR(10) CHECK (
+        message_type VARCHAR(10) CHECK (
             type = 'regular' OR type = 'ai'
         ) NOT NULL,
-        room_id INT NOT NULL,
+        room_id VARCHAR(36) NOT NULL,
         user_id INT NOT NULL,
         content TEXT NOT NULL,
-        role VARCHAR(10) NOT NULL CHECK (
-            role = 'user' OR role = 'assistant'
-        ),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP,
+        /* created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, */
         modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (room_id) REFERENCES rooms(room_id),
         FOREIGN KEY (user_id) REFERENCES users(user_id)
@@ -43,7 +41,7 @@ CREATE TABLE
         answer TEXT NOT NULL,
         prompt_tokens INT NOT NULL,
         response_tokens INT NOT NULL,
-        room_id INT NOT NULL,
+        room_id VARCHAR(36) NOT NULL,
         user_id INT NOT NULL,
         api_key VARCHAR(255) NOT NULL,
         FOREIGN KEY (room_id) REFERENCES rooms(room_id),
