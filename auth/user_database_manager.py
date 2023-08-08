@@ -6,9 +6,9 @@ class UserDatabaseManager:
         self.produce_api =  "http://producer:5000/produce"
         
 
-    def _query_user_by_email(self, user_email: str) -> dict[str, str] | None:
+    def _query_user_by(self, by: str, value: str) -> dict[str, str] | None:
 
-        query_dict = {"query": f"SELECT * FROM users where user_email = '{user_email}'"}
+        query_dict = {"query": f"SELECT * FROM users WHERE {by} = '{value}'"}
         users = requests.post(self.query_api, json= query_dict).json()["data"]
         if len(users) == 0:
             return
@@ -19,7 +19,7 @@ class UserDatabaseManager:
         if user_email is None:
             return False
         
-        user = self._query_user_by_email(user_email)
+        user = self._query_user_by("user_email", user_email)
         if user is None:
             return False
         
@@ -41,7 +41,14 @@ class UserDatabaseManager:
 
         
     def get_user_by_email(self, user_email: str) -> User:
-        user_dict = self._query_user_by_email(user_email)
+        user_dict = self._query_user_by("user_email", user_email)
+        if user_dict is None:
+            raise ValueError("User not found")
+
+        return User(**user_dict)
+
+    def get_user_by_user_id(self, user_id: str) -> User:
+        user_dict = self._query_user_by("user_id", user_id)
         if user_dict is None:
             raise ValueError("User not found")
 

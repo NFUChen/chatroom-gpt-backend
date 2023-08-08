@@ -1,9 +1,10 @@
+from typing import Callable
 from flask import request
 from flask import Flask
 from flask_cors import CORS
 from session_store import session_store
 from authenticator import Authenticator
-from user_database_manager import user_db_manager
+from user_database_manager import user_db_manager, User
 from user_validator import UserValidator
 from login_manager import LoginManager
 from utils import handle_server_errors
@@ -57,6 +58,20 @@ def user_status():
     
     return user_dict
 
+@app.route("/query_user", methods= ["POST"])
+@handle_server_errors
+def query_user():
+    query: dict[str, str] = request.get_json()
+    by = query["by"]
+    value = query["value"]
+    func_lookup:dict[str, Callable[[str], User]] = {
+        "user_email":user_db_manager.get_user_by_email,
+        "user_id": user_db_manager.get_user_by_user_id
+    }
+    user = func_lookup[by](value)
+    
+    return user.to_dict()
+
 
 
 @app.route("/logout", methods= ["POST"])
@@ -77,7 +92,7 @@ def is_valid_sid():
         response_dict["is_valid_sid"] = True
     return response_dict
         
-# is valid user
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug= True)
