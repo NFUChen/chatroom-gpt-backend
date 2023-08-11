@@ -25,7 +25,6 @@ services:
     ports:
       - "8082:5000"
 
-
   producer:
     container_name: producer
     restart: always
@@ -102,21 +101,23 @@ services:
       - ./chatbot-nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - chatbot
-    
+
   chatroom-server:
     restart: always
     container_name: chatroom-server
     build:
       context: ./chatroom-server
       dockerfile: dockerfile
-    
+    depends_on:
+      - mysql
+      - query_manager
 
   chatroom-nginx:
     container_name: chatroom-nginx
     image: nginx:latest
     ports:
-      - 8091:80
-    # volumes:
-    #   - ./chatbot-nginx.conf:/etc/nginx/nginx.conf:ro
-    # depends_on:
-    #   - chatbot
+      - 8091:5000
+    volumes:
+      - ./chatroom-server-nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - chatroom-server
