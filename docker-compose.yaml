@@ -112,6 +112,15 @@ services:
       - mysql
       - query_manager
 
+  chatroom-socket-server:
+    restart: always
+    container_name: chatroom-socket-server
+    build:
+      context: ./chatroom-socket-server
+      dockerfile: dockerfile
+    depends_on:
+      - chatroom-server
+
   chatroom-nginx:
     container_name: chatroom-nginx
     image: nginx:latest
