@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS rooms (
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
 );
 
+INSERT INTO rooms (room_id, owner_id, room_name, room_type, is_deleted) VALUES ('dev', 1, 'room_test', 'dev', 1);
+
+
 CREATE TABLE
     IF NOT EXISTS chat_messages (
         message_id VARCHAR(36) PRIMARY KEY NOT NULL,
@@ -42,10 +45,10 @@ CREATE TABLE
         prompt_tokens INT NOT NULL,
         response_tokens INT NOT NULL,
         room_id VARCHAR(36) NOT NULL,
-        user_id INT NOT NULL,
+        asker_id INT NOT NULL,
         api_key VARCHAR(255) NOT NULL,
         FOREIGN KEY (room_id) REFERENCES rooms(room_id),
-        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        FOREIGN KEY (asker_id) REFERENCES users(user_id)
 );
 
 CREATE TABLE
