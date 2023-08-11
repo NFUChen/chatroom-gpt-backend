@@ -2,7 +2,7 @@ from room_database_manager import room_db_manager
 from chat_message import ChatMessage
 from room import Room
 from room_manager import RoomManager
-from user_manager import UserManager
+# from user_manager import UserManager
 
 def init_messages(room_id: str, message_length: int) -> dict[str, ChatMessage]:
     messages_dict = {
@@ -33,5 +33,5 @@ def init_room_manager() -> RoomManager:
     return RoomManager(rooms= all_rooms)
 
 
-user_manager = UserManager()
+# user_manager = UserManager()
 room_manager = init_room_manager()
