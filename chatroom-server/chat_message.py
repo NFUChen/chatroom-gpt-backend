@@ -5,7 +5,7 @@ from copy import deepcopy
 from typing import Literal
 from dataclasses import dataclass
 
-MessageType = Literal["regular", "ai"]
+MessageType = Literal["regular", "ai", "notification"]
 
 @dataclass
 class ChatMessage:
