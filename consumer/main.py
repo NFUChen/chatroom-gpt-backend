@@ -56,6 +56,32 @@ def delete_room_callback(ch, method, properties, body):
     mysqldb_manger.delete_room(room_id)
 
 
+# gpt response
+def insert_gpt_response(ch, method, properties, body):
+    '''
+        gpt_responses (
+        response_id VARCHAR(36) PRIMARY KEY NOT NULL,
+        datetime TIMESTAMP NOT NULL,
+        answer TEXT NOT NULL,
+        prompt_tokens INT NOT NULL,
+        response_tokens INT NOT NULL,
+        room_id VARCHAR(36) NOT NULL,
+        user_id INT NOT NULL,
+        api_key VARCHAR(255) NOT NULL,
+        FOREIGN KEY (room_id) REFERENCES rooms(room_id),
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        );
+
+            gpt_messages (
+            response_id VARCHAR(36) NOT NULL,
+            role VARCHAR(10) CHECK (
+                role = 'assistant' or role = 'user'
+            ) NOT NULL,
+            content TEXT NOT NULL,
+            FOREIGN KEY (response_id) REFERENCES gpt_responses(response_id)
+        );
+    '''
+
 queue_with_callbacks = (
     ("user", insert_user_callback),
     ("add_room", insert_room_callback),
