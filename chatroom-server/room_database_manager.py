@@ -88,7 +88,7 @@ class ChatRoomDataBaseManager:
     
     def query_all_rooms(self) -> list[dict[str, str]]:
         sql = f"""
-            SELECT * FROM rooms WHERE room_id
+            SELECT * FROM rooms
         """ 
         post_json = {
             "query": sql
