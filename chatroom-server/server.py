@@ -6,12 +6,13 @@ from chat_room_utils import room_manager
 from utils import handle_server_errors
 from room import Room
 from chat_message import ChatMessage
+import requests
+
 
 app = Flask(__name__)
 CORS(app)
 sio = SocketIO(app, cors_allowed_origins="*")
-
-
+socket_server_api = "http://chatroom-socket-server:5000/emit"
 
 @app.route("/")
 def index():
@@ -98,25 +99,43 @@ def get_room_info():
 @app.route("/emit_message_to_room", methods=["POST"])
 @handle_server_errors
 def emit_message_to_room():
+    '''
+    {
+        "message_type": "regular" | "ai"
+        "room_id": str
+        "user_id": str
+        "content": str
+        "is_message_persist": bool
+    } 
+    '''
     request_json = request.get_json()
-
     valid_message_type = ["regular", "ai"]
     message_type = request_json["message_type"]
     if message_type not in valid_message_type:
         raise ValueError(f"Invalid message type: {message_type}, please enter one of the following: {valid_message_type}")
 
     room_id = request_json["room_id"]
+    user_id = user_id["user_id"]
     content = request_json["content"]
-    user_id = request_json["user_id"]
     room = room_manager.get_room_by_id(room_id)
-    chat_message = ChatMessage.create_chat_message(
-        message_type, user_id, room_id, content
-    )
-    room.add_message(
-        chat_message
-    )
     
-    sio.emit(room.get_socket_event(message_type), {"message": content})
+    requests.post(
+        socket_server_api, 
+        json= {
+            "socket_event": room.get_socket_event(message_type),
+            "content": content
+        }
+    )
+    is_message_persist = request_json.get("is_message_persist", False)
+    if is_message_persist:
+        chat_message = ChatMessage.create_chat_message(
+            message_type, user_id, room_id, content
+        )
+        room.add_message(
+            chat_message
+        )
+        return f"message: {content} with {message_type} is sent to room [{room_id}] and is saved to DB"
+
     return f"message: {content} with {message_type} is sent to room [{room_id}]"
 
 @app.route("/list_room")
