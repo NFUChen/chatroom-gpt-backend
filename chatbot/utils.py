@@ -31,3 +31,26 @@ def handle_server_errors(func):
                 "error": str(error)
             }, 200  # Return JSON response with error message and status code 500
     return decorated
+
+def convert_messages(messages: list[dict[str, str]]) -> list[dict[str, str]]:
+    '''
+    [
+        {"user_id": 1, "content": "how can I help u"}
+        {"user_id": 2, "content": "Hi"},
+    ]
+    -> 
+    [
+        {"role": "assistant", "content": "how can I help u"}
+        {"role": "user", "content": "Hi"},
+    ]
+    '''
+
+    converted_messages = []
+    for message in messages:
+        role = "assistant" if message["user_id"] == 1 else "user" # 1 = openAI
+        content = message["content"]
+        converted_messages.append(
+            {"role": role, "content": content}
+        )
+    return converted_messages
+            
