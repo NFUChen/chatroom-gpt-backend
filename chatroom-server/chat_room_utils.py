@@ -26,7 +26,6 @@ def init_room_manager() -> RoomManager:
     all_rooms = [
         Room(**room_dict) for room_dict in room_db_manager.query_all_rooms()
     ]
-    #messages
     for room in all_rooms:
         messages_dict = init_messages(room.room_id, room.MAX_MESSAGE_LENGTH)
         room.set_messages(messages_dict)

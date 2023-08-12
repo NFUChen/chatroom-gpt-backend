@@ -20,7 +20,6 @@ class Room:
                  room_name: str, 
                  owner_id: str,
                  is_deleted: bool,
-                 messages: dict[str, list[ChatMessage]],
                  room_type: str = RoomType.PUBLIC.value
                  ) -> None:
         self.room_id = room_id
@@ -28,7 +27,7 @@ class Room:
         self.owner_id = owner_id
         self.room_type = room_type
         self.user_ids: list[str] = []
-        self.messages = messages
+        self.messages = []
         self.is_deleted = is_deleted
 
     def get_socket_event(self, message_type: MessageType) -> str:

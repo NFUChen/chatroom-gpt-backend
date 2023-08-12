@@ -18,7 +18,7 @@ def query():
     query = request_json["query"]
     query_manager.query(query)
     return {
-        "data": query_manager.query(query)
+        "data": query_manager.query(query) or []
     }
 
 
