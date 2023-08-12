@@ -43,6 +43,7 @@ services:
       dockerfile: dockerfile
     depends_on:
       - rabbitmq
+      - mysql
     tty: true
     stdin_open: true
 
@@ -53,6 +54,9 @@ services:
     ports:
       - 5672:5672 # RabbitMQ default port
       - 15672:15672 # RabbitMQ management console port
+    environment:
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
     volumes:
       - ./rabbitmq_data:/var/lib/rabbitmq # Persist data to local directory
 
