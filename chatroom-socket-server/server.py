@@ -23,10 +23,10 @@ def emit_message_to_socekt_event():
     '''
     request_json = request.get_json()
     socket_event = request_json["socket_event"]
-    content = request_json["content"]
-    sio.emit(socket_event, {"message": content})
+    data = request_json["data"]
+    sio.emit(socket_event, {"data": data})
 
-    return f"message: {content} is sent to event: {socket_event}]"
+    return f"data: {data} is sent to event: {socket_event}]"
 
 
 @app.route("/help", methods=["GET"])

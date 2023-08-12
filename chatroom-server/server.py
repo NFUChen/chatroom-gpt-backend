@@ -124,7 +124,10 @@ def emit_message_to_room():
         socket_server_api, 
         json= {
             "socket_event": room.get_socket_event(message_type),
-            "content": content
+            "data": {
+                "user_id": user_id,
+                "content": content
+            }
         }
     )
     is_message_persist = request_json.get("is_message_persist", False)
