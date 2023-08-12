@@ -50,8 +50,8 @@ class MySqlDataBaseManaer:
         return self._execute(sql)
     def insert_message(self, message_id: str, message_type:str, room_id: str, user_id: str, content: str, created_at: datetime):
 
-        sql = "INSERT INTO rooms (message_id, message_type, room_id, user_id, content, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
-        return self._execute(sql, (message_id, message_type, room_id, user_id, content, created_at.strftime(created_at, self.TIMESTAMP_FORMAT)))
+        sql = "INSERT INTO chat_messages (message_id, message_type, room_id, user_id, content, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
+        return self._execute(sql, (message_id, message_type, room_id, user_id, content, created_at.strftime(self.TIMESTAMP_FORMAT)))
 
 mysqldb_manger = MySqlDataBaseManaer("mysql", "root", "chatchat-admin", "db")
 
