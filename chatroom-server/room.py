@@ -18,8 +18,8 @@ class Room:
     def __init__(self, 
                  room_id: str, 
                  room_name: str, 
-                 owner_id: str,
-                 is_deleted: bool,
+                 owner_id: int,
+                 is_deleted: bool = False,
                  room_type: str = RoomType.PUBLIC.value
                  ) -> None:
         self.room_id = room_id
@@ -43,9 +43,9 @@ class Room:
         self.user_ids.remove(user_id)
 
     @staticmethod
-    def create_new_room(room_name: str) -> Room:
+    def create_new_room(room_name: str, owner_id: int) -> Room:
         room_id = str(uuid.uuid4())
-        return Room(room_id, room_name)
+        return Room(room_id, room_name, owner_id)
 
     def add_message(self, message: ChatMessage) -> None:
         '''

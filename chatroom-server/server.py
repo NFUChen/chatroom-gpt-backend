@@ -70,7 +70,8 @@ def leave_room():
 def create_room():
     request_json = request.get_json()
     room_name = request_json["room_name"]
-    new_room = Room.create_new_room(room_name)
+    owner_id = request_json["owner_id"]
+    new_room = Room.create_new_room(room_name, owner_id)
     room_manager.add_room(new_room)
     return new_room.to_dict()
 
