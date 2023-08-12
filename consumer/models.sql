@@ -7,7 +7,6 @@ CREATE TABLE
         is_deleted BOOLEAN NOT NULL DEFAULT 0
     );
 
-INSERT INTO users (user_email, user_name, password) VALUES ('openai', 'openai', 'openai');
 
 CREATE TABLE IF NOT EXISTS rooms (
     room_id VARCHAR(36) PRIMARY KEY NOT NULL,
@@ -18,14 +17,14 @@ CREATE TABLE IF NOT EXISTS rooms (
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
 );
 
-INSERT INTO rooms (room_id, owner_id, room_name, room_type, is_deleted) VALUES ('dev', 1, 'room_test', 'dev', 1);
+
 
 
 CREATE TABLE
     IF NOT EXISTS chat_messages (
         message_id VARCHAR(36) PRIMARY KEY NOT NULL,
         message_type VARCHAR(10) CHECK (
-            type = 'regular' OR type = 'ai'
+            message_type = 'regular' OR message_type = 'ai'
         ) NOT NULL,
         room_id VARCHAR(36) NOT NULL,
         user_id INT NOT NULL,
@@ -61,3 +60,5 @@ CREATE TABLE
         FOREIGN KEY (response_id) REFERENCES gpt_responses(response_id)
 );
 
+INSERT INTO rooms (room_id, owner_id, room_name, room_type, is_deleted) VALUES ('dev', 1, 'room_test', 'dev', 1);
+INSERT INTO users (user_email, user_name, password) VALUES ('openai', 'openai', 'openai');
