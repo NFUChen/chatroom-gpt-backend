@@ -1,4 +1,5 @@
 import pymysql
+import time
 
 # Replace these values with your actual database connection details
 DB_HOST = 'mysql'
@@ -10,6 +11,7 @@ def read_sql_file(file_path):
     with open(file_path, 'r') as file:
         return file.read()
 def create_all_tables() -> None:
+    time.sleep(5)
     try:
         # Connect to the database
         connection = pymysql.connect(
