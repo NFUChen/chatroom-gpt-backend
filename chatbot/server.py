@@ -8,6 +8,7 @@ from openai_utils import num_tokens_from_messages
 from chatbot import ChatBot
 from utils import handle_server_errors, convert_messages
 import requests
+from response_database_manager import response_db_manager
 app = Flask(__name__)
 CORS(app)
 
@@ -56,12 +57,14 @@ def answer():
     resp = emit_message_to_room(room_id, message_type, current_message, is_message_persist= True)
     server_print(resp.json())
 
-
-    return {
+    response_dict = {
         **bot.bot_response.to_dict(),
         "asker_id": asker_id,
         "room_id": room_id
     }
+
+    response_db_manager.save_response(response_dict)
+    return response_dict
 
 '''
 CREATE TABLE 
@@ -72,10 +75,10 @@ CREATE TABLE
         prompt_tokens INT NOT NULL,
         response_tokens INT NOT NULL,
         room_id VARCHAR(36) NOT NULL,
-        user_id INT NOT NULL,
+        asker_id INT NOT NULL,
         api_key VARCHAR(255) NOT NULL,
         FOREIGN KEY (room_id) REFERENCES rooms(room_id),
-        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        FOREIGN KEY (asker_id) REFERENCES users(user_id)
 );
 
 CREATE TABLE
@@ -87,6 +90,7 @@ CREATE TABLE
         content TEXT NOT NULL,
         FOREIGN KEY (response_id) REFERENCES gpt_responses(response_id)
 );
+
 '''
         
 
