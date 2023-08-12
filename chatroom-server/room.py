@@ -76,5 +76,11 @@ class Room:
         if not is_user_ids_included:
             dict_copy.pop("user_ids")
 
+        dict_copy["socket_events"] = {
+            "regular": self.get_socket_event("regular"), 
+            "ai": self.get_socket_event("ai"),
+            "notification": self.get_socket_event("notification")
+        }
+
         return dict_copy
         
