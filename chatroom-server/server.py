@@ -116,7 +116,7 @@ def emit_message_to_room():
         raise ValueError(f"Invalid message type: {message_type}, please enter one of the following: {valid_message_type}")
 
     room_id = request_json["room_id"]
-    user_id = user_id["user_id"]
+    user_id = request_json["user_id"]
     content = request_json["content"]
     room = room_manager.get_room_by_id(room_id)
     
@@ -128,16 +128,16 @@ def emit_message_to_room():
         }
     )
     is_message_persist = request_json.get("is_message_persist", False)
+    chat_message = ChatMessage.create_chat_message(
+        message_type, user_id, room_id, content
+    )
     if is_message_persist:
-        chat_message = ChatMessage.create_chat_message(
-            message_type, user_id, room_id, content
-        )
         room.add_message(
             chat_message
         )
-        return f"message: {content} with {message_type} is sent to room [{room_id}] and is saved to DB"
-
-    return f"message: {content} with {message_type} is sent to room [{room_id}]"
+    return {
+        **chat_message.to_dict(), "is_message_persist": is_message_persist
+    }
 
 @app.route("/list_room")
 @handle_server_errors

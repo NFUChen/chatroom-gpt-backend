@@ -24,6 +24,6 @@ class ChatMessage:
     
     @classmethod
     def create_chat_message(cls,message_type: str, user_id: str, room_id: str, content: str) -> ChatMessage:
-        message_id = uuid.uuid4()
-        now = datetime.datetime.now()
-        return type(cls)(message_id, message_type, user_id, room_id, content, now, now)
+        message_id = str(uuid.uuid4())
+        now = str(datetime.datetime.now())
+        return ChatMessage(message_id, message_type, user_id, room_id, content, now, now)
