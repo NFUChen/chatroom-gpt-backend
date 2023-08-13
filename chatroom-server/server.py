@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 
 from chat_room_utils import room_manager
-from utils import handle_server_errors
+from utils import handle_server_errors, login_required
 from room import Room
 from chat_message import ChatMessage
 import requests
@@ -32,11 +32,12 @@ def handle_disconnect():
 
 @app.route("/join_room", methods = ["POST"])
 @handle_server_errors
+@login_required
 def join_room():
     request_json = request.get_json()
     room_id = request_json["room_id"]
-    user_id = request_json["user_id"]
-    user_name = request_json["user_name"]
+    user_id = request_json["user"]["user_id"]
+    user_name = request_json["user"]["user_name"]
 
     room = room_manager.get_room_by_id(room_id)
     room.user_join_room(user_id)
@@ -49,11 +50,12 @@ def join_room():
 
 @app.route("/leave_room", methods = ["POST"])
 @handle_server_errors
+@login_required
 def leave_room():
     request_json = request.get_json()
     room_id = request_json["room_id"]
-    user_id = request_json["user_id"]
-    user_name = request_json["user_name"]
+    user_id = request_json["user"]["user_id"]
+    user_name = request_json["user"]["user_name"]
 
     room = room_manager.get_room_by_id(room_id)
     room.user_leave_room(user_id)
@@ -67,16 +69,18 @@ def leave_room():
 
 @app.route("/create_room", methods=["POST"])
 @handle_server_errors
+@login_required
 def create_room():
     request_json = request.get_json()
     room_name = request_json["room_name"]
-    owner_id = request_json["owner_id"]
+    owner_id = request_json["user"]["user_id"]
     new_room = Room.create_new_room(room_name, owner_id)
     room_manager.add_room(new_room)
     return new_room.to_dict()
 
 @app.route("/delete_room", methods=["POST"])
 @handle_server_errors
+@login_required
 def delete_room():
     request_json = request.get_json()
     room_id = request_json["room_id"]
@@ -85,6 +89,7 @@ def delete_room():
 
 @app.route("/room_info", methods=["POST"])
 @handle_server_errors
+@login_required
 def get_room_info():
     request_json = request.get_json()
     room_id = request_json["room_id"]
@@ -99,6 +104,7 @@ def get_room_info():
 
 @app.route("/emit_message_to_room", methods=["POST"])
 @handle_server_errors
+@login_required
 def emit_message_to_room():
     '''
     {
@@ -116,7 +122,7 @@ def emit_message_to_room():
         raise ValueError(f"Invalid message type: {message_type}, please enter one of the following: {valid_message_type}")
 
     room_id = request_json["room_id"]
-    user_id = request_json["user_id"]
+    user_id = request_json["user"]["user_id"]
     content = request_json["content"]
     room = room_manager.get_room_by_id(room_id)
     
@@ -144,6 +150,7 @@ def emit_message_to_room():
 
 @app.route("/list_room")
 @handle_server_errors
+@login_required
 def list_room():
     return room_manager.get_all_rooms_info()
 
