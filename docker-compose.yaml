@@ -134,3 +134,13 @@ services:
       - ./chatroom-server-nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - chatroom-server
+  mosquitto:
+    image: eclipse-mosquitto:2.0.15
+    restart: always
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    tty: true
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf

@@ -9,6 +9,8 @@ from chatbot import ChatBot
 from utils import handle_server_errors, convert_messages
 import requests
 from response_database_manager import response_db_manager
+import json
+from paho.mqtt.publish import single
 app = Flask(__name__)
 CORS(app)
 
@@ -26,15 +28,18 @@ def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], 
         "is_message_persist": bool
     } 
     '''
-    post_json = {
+    payload = {
         "message_type": message_type,
         "room_id": room_id,
         "user_id": 1, # 1 is openAI
         "content": content,
         "is_message_persist": is_message_persist
     }
-    response = requests.post("http://chatroom-server:5000/emit_message_to_room", json= post_json)
-    return response
+    topic = f"message/{message_type}/{room_id}"
+    single(topic, json.dumps(payload), 1, hostname= "mosquitto")
+    if is_message_persist: # only post if true
+        response = requests.post("http://chatroom-server:5000/emit_message_to_room", json= payload)
+        return response
 
 @app.route("/")
 def index():
@@ -51,11 +56,9 @@ def answer():
     message_type = "ai"
     bot = ChatBot(api_key, messages)
     for current_message in bot.answer():
-        resp = emit_message_to_room(room_id, message_type, current_message)
-        server_print(resp.json())
+        emit_message_to_room(room_id, message_type, current_message)
 
-    resp = emit_message_to_room(room_id, message_type, current_message, is_message_persist= True)
-    server_print(resp.json())
+    emit_message_to_room(room_id, message_type, current_message, is_message_persist= True)
 
     response_dict = {
         **bot.bot_response.to_dict(),
