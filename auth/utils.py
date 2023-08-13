@@ -5,6 +5,10 @@ import datetime
 import random
 import string
 
+class UnauthorizedError(Exception):
+    pass
+
+
 EXPIRE_TIME =  60 * 60 * 24 * 3
 def get_error_detail(e: Exception):
     error_name = e.__class__.__name__
@@ -43,6 +47,11 @@ def handle_server_errors(func):
                 cookie_response.set_cookie("sid", sid, expires= expired_time_stamp)
                 return cookie_response
             return result_json, 200
+        except UnauthorizedError as error:
+            return {
+                "data": None,
+                "error": get_error_detail(error)
+            }, 401
         
         except Exception as error:
             return {

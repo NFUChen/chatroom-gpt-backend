@@ -7,7 +7,7 @@ from authenticator import Authenticator
 from user_database_manager import user_db_manager, User
 from user_validator import UserValidator
 from login_manager import LoginManager
-from utils import handle_server_errors
+from utils import handle_server_errors, UnauthorizedError
 app = Flask(__name__)
 CORS(app)
 
@@ -68,9 +68,10 @@ def query_user():
         "user_email":user_db_manager.get_user_by_email,
         "user_id": user_db_manager.get_user_by_user_id
     }
-    user = func_lookup[by](value)
+    user_dict = func_lookup[by](value).to_dict()
+    user_dict.pop("password")
     
-    return user.to_dict()
+    return user_dict
 
 
 
@@ -81,16 +82,17 @@ def logout():
     LoginManager.logout(sid)
     return "Logout successfully"
 
-@app.route("/is_valid_sid", methods= ["POST"])
+
+
+@app.route("/query_user_with_sid", methods= ["POST"])
 @handle_server_errors
-def is_valid_sid():
-    response_dict = {
-        "is_valid_sid": False,
-    }
+def query_user_with_sid():
     sid = request.get_json()["sid"]
-    if session_store.is_valid_sid(sid):
-        response_dict["is_valid_sid"] = True
-    return response_dict
+    user_dict = session_store.get_user_dict_from_session(sid)
+    if user_dict is None:
+        raise UnauthorizedError(f"SID: {sid} has expired")
+       
+    return user_dict
         
 
 
