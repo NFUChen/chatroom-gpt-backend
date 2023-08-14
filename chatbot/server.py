@@ -28,17 +28,22 @@ def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], 
         "is_message_persist": bool
     } 
     '''
-    payload = {
+    post_json = {
         "message_type": message_type,
         "room_id": room_id,
         "user_id": 1, # 1 is openAI
         "content": content,
         "is_message_persist": is_message_persist
     }
-    topic = f"message/{message_type}/{room_id}"
+    socket_event = f"{message_type}/{room_id}"
+    topic = f"message/{socket_event}"
+    payload = {
+            "data": {"user_id": 1, "content": content},
+            "socket_event": socket_event
+    }
     single(topic, json.dumps(payload), 1, hostname= "mosquitto")
     if is_message_persist: # only post if true
-        response = requests.post("http://chatroom-server:5000/emit_message_to_room", json= payload)
+        response = requests.post("http://chatroom-server:5000/emit_message_to_room", json= post_json)
         return response
 
 @app.route("/")
@@ -68,35 +73,6 @@ def answer():
 
     response_db_manager.save_response(response_dict)
     return response_dict
-
-'''
-CREATE TABLE 
-    IF NOT EXISTS gpt_responses (
-        response_id VARCHAR(36) PRIMARY KEY NOT NULL,
-        datetime TIMESTAMP NOT NULL,
-        answer TEXT NOT NULL,
-        prompt_tokens INT NOT NULL,
-        response_tokens INT NOT NULL,
-        room_id VARCHAR(36) NOT NULL,
-        asker_id INT NOT NULL,
-        api_key VARCHAR(255) NOT NULL,
-        FOREIGN KEY (room_id) REFERENCES rooms(room_id),
-        FOREIGN KEY (asker_id) REFERENCES users(user_id)
-);
-
-CREATE TABLE
-    IF NOT EXISTS gpt_messages (
-        response_id VARCHAR(36) NOT NULL,
-        role VARCHAR(10) CHECK (
-            role = 'assistant' or role = 'user'
-        ) NOT NULL,
-        content TEXT NOT NULL,
-        FOREIGN KEY (response_id) REFERENCES gpt_responses(response_id)
-);
-
-'''
-        
-
 
 @app.route("/count_tokens", methods=["POST"])
 def count_tokens():

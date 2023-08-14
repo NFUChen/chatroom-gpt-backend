@@ -6,8 +6,8 @@ from chat_room_utils import room_manager
 from utils import handle_server_errors, login_required
 from room import Room
 from chat_message import ChatMessage
-import requests
-
+from paho.mqtt.publish import single
+import json
 
 app = Flask(__name__)
 CORS(app)
@@ -125,18 +125,17 @@ def emit_message_to_room():
     user_id = request_json["user"]["user_id"]
     content = request_json["content"]
     room = room_manager.get_room_by_id(room_id)
-    
-    requests.post(
-        socket_server_api, 
-        json= {
-            "socket_event": room.get_socket_event(message_type),
-            "data": {
-                "user_id": user_id,
-                "content": content
-            }
-        }
+    socket_event = room.get_socket_event(message_type)
+    payload = {
+            "data": {"user_id": user_id, "content": content},
+            "socket_event": socket_event
+    }
+    single(
+        f"message/{socket_event}", 
+        json.dumps(payload), 1, hostname= "mosquitto"
     )
-    is_message_persist = request_json.get("is_message_persist", False)
+
+    is_message_persist = request_json.get("is_message_persist")
     chat_message = ChatMessage.create_chat_message(
         message_type, user_id, room_id, content
     )

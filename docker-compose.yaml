@@ -118,12 +118,14 @@ services:
 
   chatroom-socket-server:
     restart: always
-    container_name: chatroom-socket-server
     build:
       context: ./chatroom-socket-server
       dockerfile: dockerfile
     depends_on:
       - chatroom-server
+      - mosquitto
+    deploy:
+      replicas: 3
 
   chatroom-nginx:
     container_name: chatroom-nginx
@@ -134,6 +136,7 @@ services:
       - ./chatroom-server-nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - chatroom-server
+      - chatroom-socket-server
   mosquitto:
     image: eclipse-mosquitto:2.0.15
     restart: always
