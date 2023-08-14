@@ -5,6 +5,39 @@ class RoomManager:
         self.rooms_dict = {
             room.room_id: room for room in rooms
         }
+        self.user_location_dict:dict[int, str] = {}
+    
+    def user_join_room(self,user_id: int, room_id: str ) -> Room:
+
+        if user_id in self.user_location_dict:
+            raise ValueError(f"User [{user_id}] aleady in {self.user_location_dict[user_id]}")
+        if room_id not in self.rooms_dict:
+            raise ValueError(f"Room {room_id} not found")
+        
+    
+
+        self.user_location_dict[user_id] = room_id
+        
+        room = self.rooms_dict[room_id]
+        room.user_join_room(user_id)
+
+        return room
+
+    def user_leave_room(self, user_id: int) -> Room:
+        if user_id not in self.user_location_dict:
+            raise ValueError(f"User [{user_id}] have not joined any rooms")
+        
+        room_id = self.user_location_dict.pop(user_id)
+        room = self.rooms_dict[room_id]
+        room.user_leave_room(user_id)
+
+        return room
+    
+    def get_user_location(self, user_id: int) -> str:
+        if user_id not in self.user_location_dict:
+            raise ValueError(f"User [{user_id}] have not joined any rooms")
+        
+        return self.user_location_dict[user_id]
     
     def get_room_by_id(self, room_id: str) -> Room:
         if room_id not in self.rooms_dict:

@@ -35,17 +35,17 @@ def handle_disconnect():
 @login_required
 def join_room():
     request_json = request.get_json()
-    room_id = request_json["room_id"]
+    room_id = request_json["room_id"] #required
+
     user_id = request_json["user"]["user_id"]
     user_name = request_json["user"]["user_name"]
 
-    room = room_manager.get_room_by_id(room_id)
-    room.user_join_room(user_id)
+    joined_room = room_manager.user_join_room(user_id, room_id)
     notification = {
             "message":f"{user_name} has joined the room.",
-            "room_info": room.to_dict()
+            "room_info": joined_room.to_dict()
     }
-    sio.emit(room.get_socket_event("notification"), notification)
+    sio.emit(joined_room.get_socket_event("notification"), notification)
     return "ok"
 
 @app.route("/leave_room", methods = ["POST"])
@@ -53,19 +53,26 @@ def join_room():
 @login_required
 def leave_room():
     request_json = request.get_json()
-    room_id = request_json["room_id"]
     user_id = request_json["user"]["user_id"]
     user_name = request_json["user"]["user_name"]
 
-    room = room_manager.get_room_by_id(room_id)
-    room.user_leave_room(user_id)
+    left_room = room_manager.user_leave_room(user_id)
 
     notification = {
             "message":f"{user_name} has left the room.",
-            "room_info": room.to_dict()
+            "room_info": left_room.to_dict()
     }
-    sio.emit(room.get_socket_event("notification"), notification)
+    sio.emit(left_room.get_socket_event("notification"), notification)
     return "ok"
+
+@app.route("/user_location", methods = ["GET"])
+@handle_server_errors
+@login_required
+def user_location():
+    request_json = request.get_json()
+    user_id = request_json["user"]["user_id"]
+    return room_manager.get_user_location(user_id)
+
 
 @app.route("/create_room", methods=["POST"])
 @handle_server_errors

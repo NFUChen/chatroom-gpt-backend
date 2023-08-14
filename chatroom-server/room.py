@@ -37,9 +37,15 @@ class Room:
         self.messages = messages
         
     def user_join_room(self, user_id: str) -> None:
+        if user_id in self.user_ids:
+            return
+        
         self.user_ids.append(user_id)
 
     def user_leave_room(self, user_id: str) -> None:
+        if user_id not in self.user_ids:
+            return
+
         self.user_ids.remove(user_id)
 
     @staticmethod
