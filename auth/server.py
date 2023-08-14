@@ -9,8 +9,7 @@ from user_validator import UserValidator
 from login_manager import LoginManager
 from utils import handle_server_errors, UnauthorizedError
 app = Flask(__name__)
-CORS(app)
-
+CORS(app, supports_credentials=True)
 server_print = lambda content: app.logger.info(content)
 
 @app.route("/index")

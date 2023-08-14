@@ -7,10 +7,11 @@ from utils import handle_server_errors, login_required
 from room import Room
 from chat_message import ChatMessage
 from paho.mqtt.publish import single
+import requests
 import json
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 sio = SocketIO(app, cors_allowed_origins="*")
 socket_server_api = "http://chatroom-socket-server:5000/emit"
 
