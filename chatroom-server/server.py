@@ -40,8 +40,9 @@ def join_room():
 
     user_id = request_json["user"]["user_id"]
     user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
 
-    joined_room = room_manager.user_join_room(user_id, room_id)
+    joined_room = room_manager.user_join_room(full_id, room_id)
     notification = {
             "message":f"{user_name} has joined the room.",
             "room_info": joined_room.to_dict()
@@ -56,8 +57,9 @@ def leave_room():
     request_json = request.get_json()
     user_id = request_json["user"]["user_id"]
     user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
 
-    left_room = room_manager.user_leave_room(user_id)
+    left_room = room_manager.user_leave_room(full_id)
 
     notification = {
             "message":f"{user_name} has left the room.",
@@ -72,7 +74,10 @@ def leave_room():
 def user_location():
     request_json = request.get_json()
     user_id = request_json["user"]["user_id"]
-    return room_manager.get_user_location(user_id)
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+
+    return room_manager.get_user_location(full_id)
 
 
 @app.route("/create_room", methods=["POST"])
