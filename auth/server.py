@@ -74,7 +74,7 @@ def query_user():
 
 
 
-@app.route("/logout", methods= ["POST"])
+@app.route("/logout")
 @handle_server_errors
 def logout():
     sid = request.cookies.get("sid")
