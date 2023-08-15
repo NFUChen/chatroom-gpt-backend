@@ -35,7 +35,10 @@ class Room:
 
     def set_messages(self, messages: dict[str, list[ChatMessage]]) -> None:
         self.messages = messages
-        
+
+    def get_ai_messages(self, last_n: int) -> list[ChatMessage]:
+        return self.messages["ai"][-last_n:]
+            
     def user_join_room(self, user_id: str) -> None:
         if user_id in self.user_ids:
             return
@@ -87,6 +90,7 @@ class Room:
             "ai": self.get_socket_event("ai"),
             "notification": self.get_socket_event("notification")
         }
+        dict_copy["num_of_people"] = len(self.user_ids)
 
         return dict_copy
         
