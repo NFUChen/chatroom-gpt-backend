@@ -118,7 +118,7 @@ def get_room_info():
             is_user_ids_included= is_user_ids_included
             )
 
-@app.route("/emit_regular_message_to_room", methods=["POST"])
+@app.route("/emit_message_to_room", methods=["POST"])
 @handle_server_errors
 @login_required
 def emit_regular_message_to_room():
@@ -126,17 +126,19 @@ def emit_regular_message_to_room():
     {
         "content": str
         "is_message_persist": bool
+        "message_type": str
     } 
     '''
     request_json = request.get_json()
     user_id = request_json["user"]["user_id"]
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
+    message_type = request_json.get("message_type")
     
     content = request_json["content"] # required
     room_id = room_manager.get_user_location(full_id)
     room = room_manager.get_room_by_id(room_id)
-    socket_event = room.get_socket_event("regular")
+    socket_event = room.get_socket_event(message_type)
     payload = {
             "data": {"user_id": user_id, "content": content},
             "socket_event": socket_event
@@ -147,7 +149,7 @@ def emit_regular_message_to_room():
     )
     is_message_persist = request_json.get("is_message_persist")
     chat_message = ChatMessage.create_chat_message(
-        "regular", user_id, room_id, content
+        message_type, user_id, room_id, content
     )
     if is_message_persist:
         room.add_message(
