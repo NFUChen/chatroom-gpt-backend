@@ -10,6 +10,9 @@ from paho.mqtt.publish import single
 import requests
 import json
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 sio = SocketIO(app, cors_allowed_origins="*")
@@ -115,30 +118,25 @@ def get_room_info():
             is_user_ids_included= is_user_ids_included
             )
 
-@app.route("/emit_message_to_room", methods=["POST"])
+@app.route("/emit_regular_message_to_room", methods=["POST"])
 @handle_server_errors
 @login_required
-def emit_message_to_room():
+def emit_regular_message_to_room():
     '''
     {
-        "message_type": "regular" | "ai"
-        "room_id": str
-        "user_id": str
         "content": str
         "is_message_persist": bool
     } 
     '''
     request_json = request.get_json()
-    valid_message_type = ["regular", "ai"]
-    message_type = request_json["message_type"]
-    if message_type not in valid_message_type:
-        raise ValueError(f"Invalid message type: {message_type}, please enter one of the following: {valid_message_type}")
-
-    room_id = request_json["room_id"]
     user_id = request_json["user"]["user_id"]
-    content = request_json["content"]
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+    
+    content = request_json["content"] # required
+    room_id = room_manager.get_user_location(full_id)
     room = room_manager.get_room_by_id(room_id)
-    socket_event = room.get_socket_event(message_type)
+    socket_event = room.get_socket_event("regular")
     payload = {
             "data": {"user_id": user_id, "content": content},
             "socket_event": socket_event
@@ -147,10 +145,9 @@ def emit_message_to_room():
         f"message/{socket_event}", 
         json.dumps(payload), 1, hostname= "mosquitto"
     )
-
     is_message_persist = request_json.get("is_message_persist")
     chat_message = ChatMessage.create_chat_message(
-        message_type, user_id, room_id, content
+        "regular", user_id, room_id, content
     )
     if is_message_persist:
         room.add_message(
@@ -160,18 +157,52 @@ def emit_message_to_room():
         **chat_message.to_dict(), "is_message_persist": is_message_persist
     }
 
+@app.route("/save_ai_message", methods=["POST"])
+@handle_server_errors
+def save_ai_message():
+    '''
+    {
+        "message_type": message_type,
+        "room_id": room_id,
+        "user_id": 1, # 1 is openAI
+        "content": content,
+        "is_message_persist": is_message_persist
+    }
+    '''
+    request_json = request.get_json()
+    
+    content = request_json["content"]
+    room_id = request_json["room_id"]
+    user_id = request_json["user_id"] # 1
+    message_type = request_json["message_type"]
+
+    room = room_manager.get_room_by_id(room_id)
+    chat_message = ChatMessage.create_chat_message(
+        message_type, user_id, room_id, content
+    )
+    room.add_message(
+        chat_message
+    )
+
+
+    return chat_message.to_dict()
+
+
+
 @app.route("/answer", methods = ["POST"])
 @handle_server_errors
 @login_required
 def answer():
     request_json = request.get_json()
     user_id = request_json["user"]["user_id"]
-    room_id = room_manager.get_user_location(user_id)
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+    room_id = room_manager.get_user_location(full_id)
 
     room = room_manager.get_room_by_id(room_id)
     post_json = {
         "messages": [message.to_dict() for message in room.get_ai_messages(5)],
-        "api_key": "key",
+        "api_key": "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",
         "room_id": room_id,
         "asker_id": user_id
     }

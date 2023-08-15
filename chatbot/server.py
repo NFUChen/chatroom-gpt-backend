@@ -43,7 +43,7 @@ def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], 
     }
     single(topic, json.dumps(payload), 1, hostname= "mosquitto")
     if is_message_persist: # only post if true
-        response = requests.post("http://chatroom-server:5000/emit_message_to_room", json= post_json)
+        response = requests.post("http://chatroom-server:5000/save_ai_message", json= post_json)
         return response
 
 @app.route("/")
