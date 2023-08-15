@@ -66,7 +66,7 @@ def leave_room():
     sio.emit(left_room.get_socket_event("notification"), notification)
     return "ok"
 
-@app.route("/user_location", methods = ["GET"])
+@app.route("/user_location", methods = ["POST"])
 @handle_server_errors
 @login_required
 def user_location():
@@ -155,7 +155,27 @@ def emit_message_to_room():
         **chat_message.to_dict(), "is_message_persist": is_message_persist
     }
 
-@app.route("/list_room")
+@app.route("/answer", methods = ["POST"])
+@handle_server_errors
+@login_required
+def answer():
+    request_json = request.get_json()
+    user_id = request_json["user"]["user_id"]
+    room_id = room_manager.get_user_location(user_id)
+
+    room = room_manager.get_room_by_id(room_id)
+    post_json = {
+        "messages": [message.to_dict() for message in room.get_ai_messages(5)],
+        "api_key": "key",
+        "room_id": room_id,
+        "asker_id": user_id
+    }
+    sio.start_background_task(
+        requests.post("http://chatbot:5000/answer", json= post_json)
+    )
+    return post_json
+
+@app.route("/list_room", methods = ["POST"])
 @handle_server_errors
 @login_required
 def list_room():
