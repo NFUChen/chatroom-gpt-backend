@@ -4,7 +4,7 @@ from room import Room
 from room_manager import RoomManager
 # from user_manager import UserManager
 
-def init_messages(room_id: str, message_length: int) -> dict[str, ChatMessage]:
+def init_messages(room_id: str, message_length: int) -> dict[str, list[ChatMessage]]:
     messages_dict = {
         "regular": [], "ai": []
     }
