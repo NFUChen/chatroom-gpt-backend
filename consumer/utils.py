@@ -31,9 +31,10 @@ def create_all_tables() -> None:
                 print(statment)
                 # Execute SQL statements
                 cursor.execute(f"{statment};")
+                 # Commit the changes to the database
+                connection.commit()
 
-        # Commit the changes to the database
-        connection.commit()
+       
     except pymysql.Error as error:
         print(f"Error: {error}")
     
