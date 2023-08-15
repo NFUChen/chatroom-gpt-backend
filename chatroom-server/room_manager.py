@@ -57,7 +57,14 @@ class RoomManager:
         # delete room to db via publisher
         target_room = self.rooms_dict[room_id]
         room_db_manager.delete_room(target_room)
-
+        
+        # clear who have joined this deleted room
+        self.user_location_dict = {
+            user_id: room_id 
+            for user_id, room_id in self.user_location_dict.items() 
+            if room_id != room_id
+        }
+        
         return self.rooms_dict.pop(room_id)
     
     def get_all_rooms_info(self) -> list[dict[str, str]]:
