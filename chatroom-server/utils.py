@@ -15,7 +15,7 @@ def handle_server_errors(func):
             return {
                 "data": None,
                 "error": str(error)
-            }, 500  # Return JSON response with error message and status code 500
+            }, 200
     return decorated
 
 def login_required(func):
