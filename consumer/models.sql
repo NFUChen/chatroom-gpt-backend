@@ -60,5 +60,5 @@ CREATE TABLE
         FOREIGN KEY (response_id) REFERENCES gpt_responses(response_id)
 );
 
-INSERT INTO rooms (room_id, owner_id, room_name, room_type, is_deleted) VALUES ('dev', 1, 'room_test', 'dev', 1);
 INSERT INTO users (user_email, user_name, password) VALUES ('openai', 'openai', 'openai');
+INSERT INTO rooms (room_id, owner_id, room_name, room_type, is_deleted) VALUES ('dev', 1, 'room_test', 'dev', 1);
