@@ -133,7 +133,7 @@ class ChatRoomDataBaseManager:
         '''
         sql = f"""
             SELECT * FROM chat_messages 
-            WHERE room_id = {room_id} AND message_type = {message_type} 
+            WHERE room_id = '{room_id}' AND message_type = '{message_type}' 
             ORDER BY created_at DESC
             LIMIT {n_records}
         """
