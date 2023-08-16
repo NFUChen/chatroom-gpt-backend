@@ -1,6 +1,5 @@
 from flask import Flask, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
 
 from chat_room_utils import room_manager
 from utils import handle_server_errors, login_required
@@ -14,22 +13,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-sio = SocketIO(app, cors_allowed_origins="*")
+
 @app.route("/")
 def index():
     return "Welcome to chatroom central socket server"
-
-
-@sio.on('connect')
-def handle_connect():
-    print(f'Client {request.sid} connected')
-    emit('connect_resp', {'message': 'connected sucessfully with server'})
-
-@sio.on('disconnect')
-def handle_disconnect():
-    print(f'Client {request.sid} disconnected')
-    emit('connect_resp', {'message': 'disconnected sucessfully with server'})
-
 
 @app.route("/join_room", methods = ["POST"])
 @handle_server_errors
@@ -43,11 +30,20 @@ def join_room():
     full_id = f"{user_id}-{user_name}"
 
     joined_room = room_manager.user_join_room(full_id, room_id)
+    socket_event = joined_room.get_socket_event("notification")
     notification = {
             "message":f"{user_name} has joined the room.",
             "room_info": joined_room.to_dict()
     }
-    sio.emit(joined_room.get_socket_event("notification"), notification)
+
+    payload = {
+            "data": notification,
+            "socket_event": socket_event
+        }
+    single(
+        f"message/{socket_event}", 
+        json.dumps(payload), 1, hostname= "mosquitto"
+    )
     return "ok"
 
 @app.route("/leave_room", methods = ["POST"])
@@ -61,11 +57,20 @@ def leave_room():
 
     left_room = room_manager.user_leave_room(full_id)
 
+    socket_event = left_room.get_socket_event("notification")
     notification = {
             "message":f"{user_name} has left the room.",
             "room_info": left_room.to_dict()
     }
-    sio.emit(left_room.get_socket_event("notification"), notification)
+    payload = {
+            "data": notification,
+            "socket_event": socket_event
+    }
+
+    single(
+        f"message/{socket_event}", 
+        json.dumps(payload), 1, hostname= "mosquitto"
+    )
     return "ok"
 
 @app.route("/user_location", methods = ["POST"])
@@ -234,5 +239,5 @@ def list_room():
 
 
 if __name__ == "__main__":
-    sio.run(app, host="0.0.0.0", debug= False)
+    app.run(host="0.0.0.0", debug= False)
     
