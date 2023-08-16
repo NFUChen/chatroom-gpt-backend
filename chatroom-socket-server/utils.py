@@ -12,5 +12,5 @@ def handle_server_errors(func):
             return {
                 "data": None,
                 "error": str(error)
-            }, 500  # Return JSON response with error message and status code 500
+            }, 200  # Return JSON response with error message and status code 500
     return decorated
