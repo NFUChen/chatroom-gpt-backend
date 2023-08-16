@@ -132,10 +132,10 @@ class ChatRoomDataBaseManager:
         modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         '''
         sql = f"""
-            SELECT * FROM chat_messages 
-            WHERE room_id = '{room_id}' AND message_type = '{message_type}' 
-            ORDER BY created_at DESC
-            LIMIT {n_records}
+            SELECT chat_messages.*, users.user_name FROM chat_messages 
+            LEFT JOIN users on chat_messages.user_id = users.user_id 
+            WHERE room_id = '{room_id}' AND message_type = '{message_type}'
+            ORDER BY created_at DESC LIMIT {n_records}
         """
         post_json = {
             "query": sql

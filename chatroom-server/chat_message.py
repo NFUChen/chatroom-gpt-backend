@@ -12,6 +12,7 @@ class ChatMessage:
     message_id: str
     message_type: MessageType
     user_id: int
+    user_name: str
     room_id: str
     content: str
     created_at: datetime.datetime
