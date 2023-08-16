@@ -4,7 +4,8 @@ from flask_socketio import SocketIO, emit
 from mqtt_client import Client
 from utils import handle_server_errors
 import socket
-import ast
+# import ast
+import json
 from message_queue import MessageQueue
 app = Flask(__name__)
 
@@ -20,7 +21,14 @@ def index():
 
 client = Client(f"socket-server-{socket.gethostname()}", "mosquitto", "message/#", 1)
 def default_on_message(client, userdata, message):
-    message_dict = ast.literal_eval(message.payload.decode('utf-8'))
+    try:
+        msg = message.payload.decode('utf-8')
+        print(f"Receving {msg}...", flush= True)
+        message_dict = json.loads(msg)
+    except Exception as error:
+        print(error, flush= True)
+        return
+    
     queue.push(message_dict)
 
 client.set_on_message_callback(default_on_message)
