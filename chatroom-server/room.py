@@ -19,7 +19,7 @@ class Room:
                  room_id: str, 
                  room_name: str, 
                  owner_id: int,
-                 is_deleted: bool = False,
+                 is_deleted: bool = 0,
                  room_type: str = RoomType.PUBLIC.value
                  ) -> None:
         self.room_id = room_id
@@ -28,7 +28,14 @@ class Room:
         self.room_type = room_type
         self.user_ids: list[str] = []
         self.messages = []
-        self.is_deleted = is_deleted
+        self.is_deleted = True if is_deleted else False
+        self.is_locked = False
+    
+    def lock_room(self) -> None:
+        self.is_locked = True
+    
+    def unlock_room(self) -> None:
+        self.is_locked = False
 
     def get_socket_event(self, message_type: MessageType) -> str:
         return f"{message_type}/{self.room_id}"

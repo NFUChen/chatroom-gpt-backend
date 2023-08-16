@@ -7,17 +7,14 @@ from utils import handle_server_errors, login_required
 from room import Room
 from chat_message import ChatMessage
 from paho.mqtt.publish import single
-import requests
 import json
-
 import logging
 logging.basicConfig(level=logging.DEBUG)
+
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 sio = SocketIO(app, cors_allowed_origins="*")
-socket_server_api = "http://chatroom-socket-server:5000/emit"
-
 @app.route("/")
 def index():
     return "Welcome to chatroom central socket server"
@@ -190,7 +187,6 @@ def save_ai_message():
     return chat_message.to_dict()
 
 
-
 @app.route("/answer", methods = ["POST"])
 @handle_server_errors
 @login_required
@@ -200,18 +196,34 @@ def answer():
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
     room_id = room_manager.get_user_location(full_id)
-
     room = room_manager.get_room_by_id(room_id)
+    if room.is_locked:
+        raise ValueError(f"Room: {room_id} is currently locked, getting answer key is forbidden")
+    
     post_json = {
         "messages": [message.to_dict() for message in room.get_ai_messages(5)],
         "api_key": "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",
         "room_id": room_id,
         "asker_id": user_id
     }
-    sio.start_background_task(
-        requests.post("http://chatbot:5000/answer", json= post_json)
-    )
     return post_json
+
+@app.route("/acquire_room_lock") # the lock is acquired by robot, so no need for login
+@handle_server_errors
+def acquire_room_lock():
+    request_json = request.get_json()
+    room_id = request_json["room_id"]
+    room_manager.lock_room(room_id)
+
+    return f"Room: {room_id} locked"
+
+@app.route("/release_room_lock")
+def release_room_lock():
+    request_json = request.get_json()
+    room_id = request_json["room_id"]
+    room_manager.lock_room(room_id)
+
+    return f"Room: {room_id} unlocked"
 
 @app.route("/list_room", methods = ["POST"])
 @handle_server_errors
