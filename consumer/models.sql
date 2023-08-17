@@ -11,7 +11,7 @@ CREATE TABLE
 CREATE TABLE IF NOT EXISTS rooms (
     room_id VARCHAR(36) PRIMARY KEY NOT NULL,
     owner_id INT NOT NULL,
-    room_name VARCHAR(255) NOT NULL UNIQUE,
+    room_name VARCHAR(255) NOT NULL,
     room_type VARCHAR(10) NOT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT 0,
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
