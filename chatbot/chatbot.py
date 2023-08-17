@@ -8,6 +8,7 @@ import uuid
 import dataclasses
 @dataclasses.dataclass
 class ChatBotResponse:
+    model_name: str
     response_id: str
     datetime: str
     messages: list[dict[str, str]]
@@ -101,6 +102,7 @@ class ChatBot:
             }
             ])
             self.bot_response = ChatBotResponse(
+                model_name= chosen_model,
                 response_id= str(uuid.uuid4()),
                 datetime= get_taipei_time(),
                 messages= self.messages,

@@ -39,6 +39,7 @@ CREATE TABLE
 CREATE TABLE 
     IF NOT EXISTS gpt_responses (
         response_id VARCHAR(36) PRIMARY KEY NOT NULL,
+        model_name VARCHAR(20) NOT NULL,
         datetime TIMESTAMP NOT NULL,
         answer TEXT NOT NULL,
         prompt_tokens INT NOT NULL,
