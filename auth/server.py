@@ -51,6 +51,9 @@ def login():
 @handle_server_errors
 def user_status():
     cookie_sid = request.cookies.get("sid")
+    if cookie_sid is None:
+        raise ValueError("No SID in cookie")
+
     user_dict = session_store.get_user_dict_from_session(cookie_sid)
     if user_dict is None:
         raise ValueError(f"Invalid SID: {cookie_sid}")
