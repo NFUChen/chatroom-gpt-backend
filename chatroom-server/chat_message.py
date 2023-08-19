@@ -24,7 +24,7 @@ class ChatMessage:
         return dict_copy
     
     @classmethod
-    def create_chat_message(cls,message_type: str, user_id: str, room_id: str, content: str) -> ChatMessage:
+    def create_chat_message(cls,message_type: str, user_id: str, user_name: str, room_id: str, content: str) -> ChatMessage:
         message_id = str(uuid.uuid4())
         now = str(datetime.datetime.now())
-        return ChatMessage(message_id, message_type, user_id, room_id, content, now, now)
+        return ChatMessage(message_id, message_type, user_id, user_name, room_id, content, now, now, )

@@ -151,7 +151,7 @@ def emit_regular_message_to_room():
     )
     is_message_persist = request_json.get("is_message_persist")
     chat_message = ChatMessage.create_chat_message(
-        message_type, user_id, room_id, content
+        message_type, user_id, user_name ,room_id, content
     )
     if is_message_persist:
         room.add_message(
