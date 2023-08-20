@@ -38,7 +38,7 @@ def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], 
     socket_event = f"{message_type}/{room_id}"
     topic = f"message/{socket_event}"
     payload = {
-            "data": {"user_id": 1, "content": content},
+            "data": {"user_id": 1,"content": content, "is_message_persist": is_message_persist},
             "socket_event": socket_event
     }
     single(topic, json.dumps(payload), 1, hostname= "mosquitto")
