@@ -32,8 +32,9 @@ def join_room():
     joined_room = room_manager.user_join_room(full_id, room_id)
     socket_event = joined_room.get_socket_event("notification")
     notification = {
-            "message":f"{user_name} has joined the room.",
-            "room_info": joined_room.to_dict()
+            "user_id": user_id,
+            "user_name": user_name,
+            "is_join": True
     }
 
     payload = {
@@ -59,8 +60,9 @@ def leave_room():
 
     socket_event = left_room.get_socket_event("notification")
     notification = {
-            "message":f"{user_name} has left the room.",
-            "room_info": left_room.to_dict()
+            "user_name": user_name,
+            "user_id": user_id,
+            "is_join": False
     }
     payload = {
             "data": notification,
@@ -142,7 +144,7 @@ def emit_regular_message_to_room():
     room = room_manager.get_room_by_id(room_id)
     socket_event = room.get_socket_event(message_type)
     payload = {
-            "data": {"user_id": user_id, "content": content},
+            "data": {"user_id": user_id, "content": content, "user_name": user_name},
             "socket_event": socket_event
     }
     single(
