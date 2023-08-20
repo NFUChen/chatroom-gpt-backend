@@ -27,9 +27,15 @@ class Room:
         self.owner_id = owner_id
         self.room_type = room_type
         self.user_ids: list[str] = []
-        self.messages = []
+        self.messages = self._get_empty_messages()
         self.is_deleted = True if is_deleted else False
         self.is_locked = False
+
+    def _get_empty_messages(self) -> dict[str, list[ChatMessage]]:
+        return {
+            "regular": [],
+            "ai": [],
+        }
     
     def lock_room(self) -> None:
         self.is_locked = True
