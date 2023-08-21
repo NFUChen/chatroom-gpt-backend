@@ -32,6 +32,7 @@ def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], 
         "message_type": message_type,
         "room_id": room_id,
         "user_id": 1, # 1 is openAI
+        "user_name": "openai",
         "content": content,
         "is_message_persist": is_message_persist
     }

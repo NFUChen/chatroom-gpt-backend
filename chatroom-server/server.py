@@ -180,11 +180,13 @@ def save_ai_message():
     content = request_json["content"]
     room_id = request_json["room_id"]
     user_id = request_json["user_id"] # 1
+    user_name = request_json["user_name"] # 1
     message_type = request_json["message_type"]
+
 
     room = room_manager.get_room_by_id(room_id)
     chat_message = ChatMessage.create_chat_message(
-        message_type, user_id, room_id, content
+        message_type, user_id, user_name, room_id, content
     )
     room.add_message(
         chat_message
