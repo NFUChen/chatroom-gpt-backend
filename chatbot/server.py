@@ -12,7 +12,7 @@ from response_database_manager import response_db_manager
 import json
 from paho.mqtt.publish import single
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 server_print = lambda content: app.logger.info(content)
 host = socket.gethostname()
