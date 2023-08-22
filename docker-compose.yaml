@@ -125,7 +125,7 @@ services:
       - chatroom-server
       - mosquitto
     deploy:
-      replicas: 3
+      replicas: 1
 
   chatroom-nginx:
     container_name: chatroom-nginx
@@ -147,3 +147,9 @@ services:
     tty: true
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+  frontend:
+    image: richli0623/chatroom-frontend:0.10
+    restart: always
+    container_name: chatroom-frontend
+    ports:
+      - "80:3000"
