@@ -39,12 +39,11 @@ def start_queue_consumer():
         while (True):
             for message_dict in queue.next():
                 if message_dict is None:
-                    sio.sleep(1)
+                    sio.sleep(0.05)
                     continue
                 socket_event = message_dict["socket_event"]
                 data = message_dict["data"]
                 sio.start_background_task(sio.emit(socket_event, {"data": data}))
-                sio.sleep(0.01)
     sio.start_background_task(target= wrapper)
 
 @sio.on('connect')
