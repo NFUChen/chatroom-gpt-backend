@@ -163,7 +163,4 @@ cython_debug/
 #.idea/
 
 # docker container data
-mongo_data/
-rabbitmq_data/
-redis_data/
-mysql_data/
+volume/

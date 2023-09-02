@@ -7,7 +7,7 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - ./redis_data:/data
+      - ./volume/redis_data:/data
   auth:
     container_name: auth
     restart: always
@@ -58,7 +58,7 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
     volumes:
-      - ./rabbitmq_data:/var/lib/rabbitmq # Persist data to local directory
+      - ./volume/rabbitmq_data:/var/lib/rabbitmq # Persist data to local directory
 
   mongo:
     container_name: mongo
@@ -70,7 +70,7 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=chat-admin
       - MONGO_INITDB_ROOT_PASSWORD=chatchat-admin
     volumes:
-      - ./mongo_data:/data/db
+      - ./volume/mongo_data:/data/db
 
   mysql:
     image: mysql:latest
@@ -84,7 +84,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./mysql_data:/var/lib/mysql
+      - ./volume/mysql_data:/var/lib/mysql
 
   chatbot:
     restart: always
