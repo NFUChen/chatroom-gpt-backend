@@ -9,10 +9,13 @@ from paho.mqtt.publish import single
 import json
 import logging
 logging.basicConfig(level=logging.DEBUG)
+import opencc
 
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
+converter = opencc.OpenCC('s2twp.json')
+
 
 @app.route("/")
 def index():
@@ -139,7 +142,7 @@ def emit_regular_message_to_room():
     full_id = f"{user_id}-{user_name}"
     message_type = request_json.get("message_type")
     
-    content = request_json["content"] # required
+    content = converter.convert(request_json["content"]) #required
     room_id = room_manager.get_user_location(full_id)
     room = room_manager.get_room_by_id(room_id)
     socket_event = room.get_socket_event(message_type)
@@ -176,8 +179,7 @@ def save_ai_message():
     }
     '''
     request_json = request.get_json()
-    
-    content = request_json["content"]
+    content = converter.convert(request_json["content"])
     room_id = request_json["room_id"]
     user_id = request_json["user_id"] # 1
     user_name = request_json["user_name"] # 1
