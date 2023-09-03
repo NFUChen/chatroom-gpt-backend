@@ -1,6 +1,7 @@
 from chat_message import ChatMessage
 import requests
 from dataclasses import dataclass
+from typing import Any
 
 @dataclass
 class Room:
@@ -34,9 +35,7 @@ class ChatRoomDataBaseManager:
                 "room_type": room.room_type
             }
         }
-        return requests.post(
-            self.produce_api, json= post_json
-        ).json()
+        return self.__post_to_producer(post_json)
     
     def delete_room(self, room: Room) -> None:
         
@@ -47,9 +46,7 @@ class ChatRoomDataBaseManager:
             }
         }
 
-        return requests.post(
-            self.produce_api, json= post_json
-        ).json()
+        return self.__post_to_producer(post_json)
     
     def add_message(self, message: ChatMessage) -> None:
         '''
@@ -77,14 +74,20 @@ class ChatRoomDataBaseManager:
                 "created_at": message.created_at
             }
         }
-
-        return requests.post(
-            self.produce_api, json= post_json
-        ).json()
+        return self.__post_to_producer(post_json)
     
     def __convert_to_sql_array(self, words: list[str]) -> str:
         single_quoted_words = list(map(lambda word: f"'{word}'", words))
         return f"({' ,'.join(single_quoted_words)})"
+
+    def __post_to_producer(self, post_json: dict[str, Any]) -> dict[str, str]:
+        resp_json = requests.post(
+            self.produce_api, json= post_json
+        ).json()
+        error = resp_json["error"]
+        if error is not None:
+            raise ValueError(f"Producer: {error}")
+        return resp_json
     
     def query_all_rooms(self) -> list[dict[str, str]]:
         sql = f"""

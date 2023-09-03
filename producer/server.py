@@ -3,6 +3,7 @@ from flask import request
 from flask import Flask
 from flask_cors import CORS
 from producer import producer
+from utils import handle_server_errors
 app = Flask(__name__)
 CORS(app)
 
@@ -21,6 +22,7 @@ Signature:
 '''
 
 @app.route("/produce", methods= ["POST"])
+@handle_server_errors
 def produce():
     request_json: dict[str, str] = request.get_json()
     keys = ["queue", "data"]
