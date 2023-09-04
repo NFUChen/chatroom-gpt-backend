@@ -17,6 +17,7 @@ class ChatMessage:
     content: str
     created_at: datetime.datetime
     modified_at: datetime.datetime | None = None
+    is_memo: bool = False
 
     def to_dict(self) -> dict[str, str]:
         dict_copy = deepcopy(self.__dict__)
@@ -24,7 +25,7 @@ class ChatMessage:
         return dict_copy
     
     @classmethod
-    def create_chat_message(cls,message_type: str, user_id: str, user_name: str, room_id: str, content: str) -> ChatMessage:
+    def create_chat_message(cls,message_type: str, user_id: str, user_name: str, room_id: str, content: str, is_memo: bool) -> ChatMessage:
         message_id = str(uuid.uuid4())
         now = str(datetime.datetime.now())
-        return ChatMessage(message_id, message_type, user_id, user_name, room_id, content, now, now, )
+        return ChatMessage(message_id, message_type, user_id, user_name, room_id, content, now, now, is_memo)

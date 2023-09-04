@@ -141,6 +141,7 @@ def emit_regular_message_to_room():
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
     message_type = request_json.get("message_type")
+    is_memo = request_json.get("is_memo", False)
     
     content = converter.convert(request_json["content"]) #required
     room_id = room_manager.get_user_location(full_id)
@@ -156,7 +157,7 @@ def emit_regular_message_to_room():
     )
     is_message_persist = request_json.get("is_message_persist")
     chat_message = ChatMessage.create_chat_message(
-        message_type, user_id, user_name ,room_id, content
+        message_type, user_id, user_name ,room_id, content,is_memo
     )
     if is_message_persist:
         room.add_message(
@@ -184,11 +185,12 @@ def save_ai_message():
     user_id = request_json["user_id"] # 1
     user_name = request_json["user_name"] # 1
     message_type = request_json["message_type"]
+    is_memo = request_json.get("is_memo", False)
 
 
     room = room_manager.get_room_by_id(room_id)
     chat_message = ChatMessage.create_chat_message(
-        message_type, user_id, user_name, room_id, content
+        message_type, user_id, user_name, room_id, content, is_memo
     )
     room.add_message(
         chat_message
@@ -212,7 +214,7 @@ def answer():
         raise ValueError(f"Room: {room_id} is currently locked, getting answer key is forbidden")
     
     post_json = {
-        "messages": [message.to_dict() for message in room.get_ai_messages(5)],
+        "messages": [message.to_dict() for message in room.get_ai_messages(3)],
         "api_key": "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",
         "room_id": room_id,
         "asker_id": user_id
