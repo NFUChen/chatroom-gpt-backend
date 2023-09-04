@@ -2,30 +2,18 @@ import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 from qdrant_client.http.models import PointStruct, UpdateStatus
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from utils import get_current_datetime
+from embeddings_service import EmbeddingService, embedding_service
 
-
-import openai
-from openai.embeddings_utils import get_embedding
-
-openai.api_key = "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"
-embedding_model = "text-embedding-ada-002"
 
 class QdrantVectorStore:
     def __init__(self,
+                 embedding_service: EmbeddingService, 
                  host: str = "qdrant",
                  port: int = 6333,
                  vector_size: int = 1536,
                  vector_distance: str=Distance.COSINE,
-                 text_spliter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
-                            chunk_size = 500,
-                            chunk_overlap  = 50,
-                            length_function = len,
-                            add_start_index = True,
-                        )
                  ) -> None:
-
+        self.embedding_service = embedding_service
         self.client = QdrantClient(
             url=host,
             port=port,
@@ -33,7 +21,6 @@ class QdrantVectorStore:
 
         self.vector_size = vector_size
         self.vector_distance = vector_distance
-        self.text_spliter = text_spliter
 
     def _set_up_collection(self, collection_name: str) -> None:
         
@@ -52,34 +39,25 @@ class QdrantVectorStore:
         except Exception as error:
             return False
 
-    def upsert_text(self, collection_name: str, text: str) -> str:
+    def upsert_text(self, collection_name: str, text: str) -> dict[str, str | list[EmbeddingService]]:
         if len(text) == 0:
             raise ValueError("Entering empty text, abort upsert text request")
 
         if not self._is_collection_exist(collection_name):
             self._set_up_collection(collection_name)
-        document_id = str(uuid.uuid4())
-        text_chunks = self.text_spliter.split_text(text)
 
-        points = []
-        embeddings = []
-        for chunk in text_chunks:
-            text_vector = get_embedding(chunk, engine=embedding_model)
-            print(f"Create embedding for chunk text: {chunk}\n\n")
-            chunk_id = str(uuid.uuid4())
-            payload_dict = {
-                "text": chunk, 
-                "updated_at": get_current_datetime(), 
-                "document_id": document_id,
-            }
-            # document id is to identification purpose
-            # chunk id is for updating purpose
-            embeddings.append(
-                {**payload_dict, "vector": text_vector, "chunk_id": chunk_id }
-            )
-            point = PointStruct(id=chunk_id, vector=text_vector, payload=payload_dict)
-            points.append(point)
-
+        embeddings = self.embedding_service.get_embedding_list(text)
+        points = [
+            PointStruct(
+                id=embedding.chunk_id, 
+                vector= embedding.vector, 
+                payload={
+                            "text": embedding.text, 
+                            "updated_at": embedding.updated_at, 
+                            "document_id": embedding.document_id
+                        }
+            ) for embedding in embeddings
+        ]
         operation_info = self.client.upsert(
             collection_name=collection_name,
             wait=True,
@@ -93,7 +71,7 @@ class QdrantVectorStore:
 
         return {
             "collection_name": collection_name,
-            "points": embeddings,
+            "embeddings": embeddings,
             "status": operation_info.status
         }
 
@@ -111,10 +89,10 @@ class QdrantVectorStore:
             self._set_up_collection(collection_name)
             return []
 
-        input_vector = get_embedding(input_query, engine=embedding_model)
+        embedding = self.embedding_service.get_embedding(input_query)
         payloads = self.client.search(
             collection_name=collection_name,
-            query_vector=input_vector,
+            query_vector=embedding.vector,
             limit=limit
         )
 
@@ -133,4 +111,4 @@ class QdrantVectorStore:
             result.append(data)
         return result
     
-qdrant_vector_store = QdrantVectorStore()
+qdrant_vector_store = QdrantVectorStore(embedding_service= embedding_service)
