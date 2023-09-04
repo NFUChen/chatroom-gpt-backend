@@ -15,6 +15,7 @@ from utils import (
 import requests
 from response_database_manager import response_db_manager
 from qdrant_vector_store import qdrant_vector_store
+from embedding_service import embedding_service
 import json
 from paho.mqtt.publish import single
 app = Flask(__name__)
@@ -66,11 +67,13 @@ def answer():
     room_id = request_json["room_id"]
     asker_id = request_json["asker_id"]
     message_type = "ai"
-    query_content = concat_messages_till_threshold([msg_dict["content"] for msg_dict in messages[:3][::-1]], 1000) or messages[-1]["content"]
+    query = concat_messages_till_threshold([msg_dict["content"] for msg_dict in messages[:3][::-1]], 1000) or messages[-1]["content"]
 
-    query_results = qdrant_vector_store.search_text_chunks(room_id, query_content, threshold= 0.7)
+    embedding = embedding_service.get_embedding(query)
+    query_results = qdrant_vector_store.search_text_chunks(room_id, embedding, threshold= 0.7)
     
     system_prompt = create_system_pompt(query_results)
+    print(system_prompt, flush= True)
     bot = ChatBot(api_key, system_prompt, messages)
     for current_message in bot.answer():
         emit_message_to_room(room_id, message_type, current_message)
@@ -107,7 +110,8 @@ def memo():
 
     if text_length > size_limit:
         raise ValueError(f"Text length must shorter than {size_limit}, entering {text_length}")
-    upsert_json  = qdrant_vector_store.upsert_text(room_id, text)
+    embeddings = embedding_service.get_embedding_list(text)
+    upsert_json  = qdrant_vector_store.upsert_text(room_id, embeddings)
     return upsert_json
 
 
