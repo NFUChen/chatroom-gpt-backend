@@ -1,7 +1,6 @@
 from typing import Literal, Iterable
 import openai
 from openai_utils import num_tokens_from_messages
-from utils import create_pompt
 from datetime import datetime, timedelta
 import traceback
 import uuid
@@ -46,25 +45,28 @@ def log_error(exception: Exception) -> None:
 Role =  Literal["system", "user", "assistant"]
 
 class ChatBot:
-    def __init__(self, api_key: str, chat_messages: list[dict[str, str]]) -> None:
-        self.messages = [self._get_system_prompt(), *chat_messages]
+    def __init__(self, api_key: str, system_prompt: str,chat_messages: list[dict[str, str]], is_token_lazy_eval: bool = True) -> None:
+        self.messages = [self._create_system_prompt(system_prompt), *chat_messages]
         self.api_key = api_key
-        self.source_token_count = num_tokens_from_messages(self.messages)
+        
+        self.source_token_count = (
+            len("|".join([msg_dict["content"] for msg_dict in self.messages])) 
+            if is_token_lazy_eval else num_tokens_from_messages(self.messages)
+        )
         self.reponse_message_token_count = 0 
         self.current_message = ""
         self.MAX_TOKENS_ACCEPTED = 15500
 
     @property
     def model(self) -> str | None:
-        if self.source_token_count < 3500:
+        if self.source_token_count < (3500 + 1000):
             return "gpt-3.5-turbo" # 4k
         if self.source_token_count < self.MAX_TOKENS_ACCEPTED:
             return "gpt-3.5-turbo-16k"
         return
 
-    def _get_system_prompt(self) -> list[dict[str, str]]:
-        return {"role": "system", "content": create_pompt()}
-        
+    def _create_system_prompt(self, system_prompt: str) -> list[dict[str, str]]:
+        return {"role": "system", "content": system_prompt}        
         
     def _update_current_message(self, msg: str) -> None:
         self.current_message += msg
@@ -111,18 +113,3 @@ class ChatBot:
                 response_tokens= reponse_message_token_count,
                 api_key= self.api_key
             )
-    
-            
-            
-
-if __name__ == "__main__":
-    messages = [
-        {
-            "role": "user",
-            "content": "怎麼學烹飪"
-        }
-    ]
-    bot = ChatBot("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", messages)
-    for msg in bot.answer():
-        print(msg)
-    print(bot.bot_reponse.to_dict())

@@ -149,9 +149,16 @@ services:
     tty: true
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
-  frontend:
-    image: richli0623/chatroom-frontend:0.10
-    restart: always
-    container_name: chatroom-frontend
+  # frontend:
+  #   image: richli0623/chatroom-frontend:0.10
+  #   restart: always
+  #   container_name: chatroom-frontend
+  #   ports:
+  #     - "80:3000"
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    volumes:
+      - ./volume/qdrant_data:/qdrant/storage
     ports:
-      - "80:3000"
+      - "6333:6333"

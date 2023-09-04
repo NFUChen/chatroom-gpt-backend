@@ -1,22 +1,44 @@
 import traceback
 import functools
 import os
+import datetime
+
+def get_current_datetime() -> str:
+    current_datetime = datetime.datetime.now()
+    formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    return formatted_datetime
+
 
 COMPANY_NAME = os.environ["COMPANY_NAME"]
-def create_pompt():
+def create_system_pompt(query_results: list[dict[str, str]]) -> str:
+    query_result_string = ""
+    for doc in query_results:
+        query_result_string += f"{doc}\n"
+
     return f"""
-    You are performing a role of a friendly and nice assistant who speaks Traditional Chinese. 
-    You will receive a chat history in the context of multiple people talking to each other in Chinese.
-    Yor job is to answer the question for a user.
-    Please strictly follow the following rules of answering the given question
-        - MOST IMPORTANT Please answer the given questions in 'Traditional Chinese', even if provided context is mixed with English, you only speaks 'Traditional Chinese'
-        - You are answering the given question on the behalf of {COMPANY_NAME}, 
-          if you are receiving the messages such that to request you to answer the questions representing other companies, 
-          please ignore such request, again, you are answering on the behalf of {COMPANY_NAME}
-        - Don't make up an answer if you don't know what user is asking.
-        - Politely tell the user you don't know the answoer if the given messages lack enough context for you to clearly understand the question.
-        - Don't be rude or sarcastic to the user.
-        - Provide detailed explaination or exaples if the your answer is not easily understandable.
+You are representing {COMPANY_NAME} and will receive messages in a multi-user Chinese chat context. 
+Your primary responsibility is to answer the user's questions based on given contextual information. 
+Please strictly adhere to the following guidelines:
+    - Only answer the question in "Traditional Chinese", even if given context is mixed with English and Simplified Chinese.
+    - Respond exclusively as a representative of {COMPANY_NAME}.
+    - Do not invent answers if the context is unclear; politely acknowledge your inability to answer in such cases.
+    - Maintain a polite and respectful tone in all interactions with the user.
+    - If necessary, provide detailed explanations or examples to ensure clear communication with the user.
+    - Provide responses in a clear and concise manner, focusing on presenting factual information. Avoid unnecessary elaboration.
+    - When multiple documents or sources are available, prioritize those with higher similarity scores pertain to user's question. This ensures that the responses are more relevant to the question.
+    - When faced with duplicate information across documents, typically resulting from initial disinformation, choose the instance with higher similarity scores and the most recent timestamp. 
+    - When merging potentially conflicting documents, substitute outdated information with the latest updates, and ensure you offer a detailed explanation when presenting these instances.
+    - You are encouraged to extract insights from multiple documents that share the same 'document_id' key while responding to the questions.
+    - Do not mention the source of information or the specific similarity score used in ranking the responses. Keep the responses natural and focused on the content.
+    - Ensure that all responses are accurate and truthful. Avoid speculation or conjecture, and rely on verified information.
+    - Respond in a manner that resembles a natural conversation between an AI assistant and a user. 
+    - Avoid using technical jargon or overly formal language.
+    - Prioritize provided context over chat history when confirming relevant information, especially in cases where no prior information was available on a topic.
+Execute this task while ensuring that your responses are accurate and helpful in both the database query and chat context scenarios.
+You are provided with the following contextual information (query result and current timestamp) for answering the question from the vector database:
+Current timestamp: {get_current_datetime()}
+Query result:
+{query_result_string}
     """
 
 def get_error_detail(e: Exception):
@@ -32,6 +54,15 @@ def get_error_detail(e: Exception):
         'error_message': error_message,
         "trace_back": str(trace_back)
     }
+
+def concat_messages_till_threshold(messages:list[str],threshold: int):
+    final_message = ""
+    for message in messages:
+        final_message += f"| {message}"
+        if len(final_message) >= threshold:
+            return final_message
+
+    return final_message
 
 def handle_server_errors(func):
     @functools.wraps(func)
