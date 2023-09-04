@@ -61,6 +61,18 @@ CREATE TABLE
         FOREIGN KEY (response_id) REFERENCES gpt_responses(response_id)
     );
 
+CREATE TABLE
+    embeddings (
+        document_id VARCHAR(36) NOT NULL,
+        chunk_id VARCHAR(36) NOT NULL,
+        text TEXT NOT NULL,
+        updated_at DATETIME NOT NULL,
+        vector JSON NOT NULL,
+        PRIMARY KEY (document_id, chunk_id),
+        INDEX (document_id),
+        INDEX (chunk_id)
+    );
+
 INSERT INTO
     users (
         user_email,
