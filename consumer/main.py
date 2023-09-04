@@ -1,6 +1,6 @@
 from datetime import datetime
 import ast
-from mysql_database_manager import mysqldb_manger
+from mysql_database_manager import mysqldb_manager
 from utils import create_all_tables
 from consumer import Consumer
 
@@ -9,7 +9,7 @@ consumer = Consumer("guest", "guest", "rabbitmq")
 def insert_user_callback(ch, method, properties, body):
     
     message_dict = ast.literal_eval(body.decode())
-    mysqldb_manger.insert_user(
+    mysqldb_manager.insert_user(
        message_dict["user_email"],
        message_dict["user_name"],
        message_dict["password"],
@@ -23,7 +23,7 @@ def insert_room_callback(ch, method, properties, body):
     room_type VARCHAR(10) NOT NULL,
     '''
     message_dict = ast.literal_eval(body.decode())
-    mysqldb_manger.insert_room(
+    mysqldb_manager.insert_room(
         message_dict["room_id"],
         message_dict["owner_id"],
         message_dict["room_name"],
@@ -41,7 +41,7 @@ def insert_message_callback(ch, method, properties, body):
     '''
     message_dict = ast.literal_eval(body.decode())
     datetime_format = "%Y-%m-%d %H:%M:%S.%f"
-    mysqldb_manger.insert_message(
+    mysqldb_manager.insert_message(
         message_dict["message_id"], 
         message_dict["message_type"],
         message_dict["room_id"], 
@@ -53,7 +53,22 @@ def insert_message_callback(ch, method, properties, body):
 def delete_room_callback(ch, method, properties, body):
     message_dict = ast.literal_eval(body.decode())
     room_id = message_dict["room_id"]
-    mysqldb_manger.delete_room(room_id)
+    mysqldb_manager.delete_room(room_id)
+
+def insert_embedding_callback(ch, method, properties, body):
+    collection_name_with_embeddings = ast.literal_eval(body.decode())
+    datetime_format = "%Y-%m-%d %H:%M:%S.%f"
+    embeddings = collection_name_with_embeddings["embeddings"]
+    collection_name = collection_name_with_embeddings["collection_name"]
+    for embedding_dict in embeddings:
+        mysqldb_manager.insert_embedding(
+            collection_name, 
+            embedding_dict["document_id"], 
+            embedding_dict["chunk_id"], 
+            embedding_dict["text"],
+            datetime.strptime(embedding_dict["updated_at"], datetime_format),
+            embedding_dict["vector"]
+        )
 
 
 # gpt response
@@ -87,7 +102,9 @@ queue_with_callbacks = (
     ("add_room", insert_room_callback),
     ("add_message", insert_message_callback),
     ("delete_room", delete_room_callback),
+    ("embeddings", insert_embedding_callback)
 )
+
 for queue, callback in queue_with_callbacks:
     consumer.consume(queue, callback)
 

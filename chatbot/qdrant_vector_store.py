@@ -57,16 +57,12 @@ class QdrantVectorStore:
             wait=True,
             points=points
         )
-
-        if operation_info.status == UpdateStatus.COMPLETED:
-            print("Text inserted successfully!")
-        else:
-            print("Failed to insert Text")
+        is_ok = operation_info.status == UpdateStatus.COMPLETED
 
         return {
+            "is_ok": is_ok,
             "collection_name": collection_name,
-            "embeddings": embeddings,
-            "status": operation_info.status
+            "embeddings": embeddings
         }
 
     def search_text_chunks(self, collection_name: str, embedding: Embedding, limit: int = 5, threshold: float = 0.8) -> list[dict[str, str]]:

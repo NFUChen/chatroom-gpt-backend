@@ -62,15 +62,21 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    embeddings (
+    IF NOT EXISTS embeddings (
+        -- Define embedding_id as the primary key
+        embedding_id INT AUTO_INCREMENT PRIMARY KEY,
+        collection_name VARCHAR(36) NOT NULL,
         document_id VARCHAR(36) NOT NULL,
         chunk_id VARCHAR(36) NOT NULL,
         text TEXT NOT NULL,
-        updated_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL ON UPDATE CURRENT_TIMESTAMP,
         vector JSON NOT NULL,
-        PRIMARY KEY (document_id, chunk_id),
+        -- Define a unique constraint
+        UNIQUE KEY (document_id, chunk_id),
+        INDEX (collection_name),
         INDEX (document_id),
-        INDEX (chunk_id)
+        INDEX (chunk_id),
+        FOREIGN KEY (collection_name) REFERENCES rooms(room_id)
     );
 
 INSERT INTO

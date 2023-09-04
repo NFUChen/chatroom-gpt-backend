@@ -1,4 +1,5 @@
 import pymysql
+import json
 from typing import Any
 from datetime import datetime
 class MySqlDataBaseManaer:
@@ -52,10 +53,17 @@ class MySqlDataBaseManaer:
 
         sql = "INSERT INTO chat_messages (message_id, message_type, room_id, user_id, content, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
         return self._execute(sql, (message_id, message_type, room_id, user_id, content, created_at.strftime(self.TIMESTAMP_FORMAT)))
+    
+    def insert_embedding(self, collection_name: str, document_id: str, chunk_id: str, text: str, updated_at: datetime, vector: list[float]):
+        '''
+        collection_name VARCHAR(36) NOT NULL,
+        document_id VARCHAR(36) NOT NULL,
+        chunk_id VARCHAR(36) NOT NULL,
+        text TEXT NOT NULL,
+        updated_at DATETIME NOT NULL,
+        vector JSON NOT NULL,
+        '''
+        sql = "INSERT INTO embeddings (collection_name, document_id, chunk_id, text, updated_at, vector) VALUES (%s, %s, %s, %s, %s, %s)"
+        return self._execute(sql, (collection_name, document_id, chunk_id, text, updated_at.strftime(self.TIMESTAMP_FORMAT), json.dumps(vector)))
 
-mysqldb_manger = MySqlDataBaseManaer("mysql", "root", "chatchat-admin", "db")
-
-if __name__ == "__main__":
-    print(mysqldb_manger.insert_user("wichen@sram.com","wichen", "chatchat-admin"))
-    print(mysqldb_manger.insert_user("rili@sram.com","rili", "chatchat-admin"))
-    print(mysqldb_manger._execute("SELECT * FROM users"))
+mysqldb_manager = MySqlDataBaseManaer("mysql", "root", "chatchat-admin", "db")

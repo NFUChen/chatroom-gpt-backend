@@ -111,8 +111,22 @@ def memo():
     if text_length > size_limit:
         raise ValueError(f"Text length must shorter than {size_limit}, entering {text_length}")
     embeddings = embedding_service.get_embedding_list(text)
-    upsert_json  = qdrant_vector_store.upsert_text(room_id, embeddings)
-    return upsert_json
+
+    '''
+    "is_ok": is_ok,
+    "collection_name": collection_name,
+    "embeddings": embeddings
+    '''
+    upsert_resp  = qdrant_vector_store.upsert_text(room_id, embeddings)
+    
+    if not upsert_resp["is_ok"]:
+        raise ValueError("Failed to insert Text")
+    response_db_manager.save_embeddings(
+        collection_name= upsert_resp["collection_name"],
+        embeddings= [embedding.to_dict() for embedding in upsert_resp["embeddings"]]
+    )
+    
+    return upsert_resp
 
 
 
