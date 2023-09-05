@@ -69,13 +69,13 @@ CREATE TABLE
         document_id VARCHAR(36) NOT NULL,
         chunk_id VARCHAR(36) NOT NULL,
         text TEXT NOT NULL,
+        text_hash VARCHAR(64) NOT NULL UNIQUE,
+        # hash is saved in a form of {collection_name-hash}
         updated_at DATETIME NOT NULL ON UPDATE CURRENT_TIMESTAMP,
         vector JSON NOT NULL,
-        -- Define a unique constraint
-        UNIQUE KEY (document_id, chunk_id),
+        UNIQUE KEY `unique_key` (`collection_name`, `text_hash`),
         INDEX (collection_name),
         INDEX (document_id),
-        INDEX (chunk_id),
         FOREIGN KEY (collection_name) REFERENCES rooms(room_id)
     );
 

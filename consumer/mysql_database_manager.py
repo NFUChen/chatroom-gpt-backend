@@ -54,7 +54,7 @@ class MySqlDataBaseManaer:
         sql = "INSERT INTO chat_messages (message_id, message_type, room_id, user_id, content, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
         return self._execute(sql, (message_id, message_type, room_id, user_id, content, created_at.strftime(self.TIMESTAMP_FORMAT)))
     
-    def insert_embedding(self, collection_name: str, document_id: str, chunk_id: str, text: str, updated_at: datetime, vector: list[float]):
+    def insert_embedding(self, collection_name: str, document_id: str, chunk_id: str, text: str, text_hash: str,updated_at: datetime, vector: list[float]):
         '''
         collection_name VARCHAR(36) NOT NULL,
         document_id VARCHAR(36) NOT NULL,
@@ -63,7 +63,7 @@ class MySqlDataBaseManaer:
         updated_at DATETIME NOT NULL,
         vector JSON NOT NULL,
         '''
-        sql = "INSERT INTO embeddings (collection_name, document_id, chunk_id, text, updated_at, vector) VALUES (%s, %s, %s, %s, %s, %s)"
-        return self._execute(sql, (collection_name, document_id, chunk_id, text, updated_at.strftime(self.TIMESTAMP_FORMAT), json.dumps(vector)))
+        sql = "INSERT INTO embeddings (collection_name, document_id, chunk_id, text, text_hash, updated_at, vector) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        return self._execute(sql, (collection_name, document_id, chunk_id, text, text_hash, updated_at.strftime(self.TIMESTAMP_FORMAT), json.dumps(vector)))
 
 mysqldb_manager = MySqlDataBaseManaer("mysql", "root", "chatchat-admin", "db")

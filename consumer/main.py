@@ -66,6 +66,7 @@ def insert_embedding_callback(ch, method, properties, body):
             embedding_dict["document_id"], 
             embedding_dict["chunk_id"], 
             embedding_dict["text"],
+            embedding_dict["text_hash"],
             datetime.strptime(embedding_dict["updated_at"], datetime_format),
             embedding_dict["vector"]
         )
