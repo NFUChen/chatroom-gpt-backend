@@ -1,5 +1,4 @@
 import openai
-import uuid
 from openai.embeddings_utils import get_embedding
 from dataclasses import dataclass
 from utils import get_current_datetime
@@ -25,8 +24,7 @@ class EmbeddingService:
     MODEL = "text-embedding-ada-002"
     def __init__(self) -> None:
         ...
-    def get_embedding(self, text: str, _hash: str | None = None) -> Embedding:
-        document_id = str(uuid.uuid4())
+    def get_embedding(self, text: str, document_id: str, _hash: str | None = None) -> Embedding:
         text_vector = get_embedding(text, engine= self.MODEL)
         return Embedding(
             document_id= document_id,

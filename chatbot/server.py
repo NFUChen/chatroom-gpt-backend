@@ -21,6 +21,7 @@ from embedding_service import embedding_service
 import json
 from paho.mqtt.publish import single
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import uuid
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
@@ -76,7 +77,7 @@ def answer():
     message_type = "ai"
     query = concat_messages_till_threshold([msg_dict["content"] for msg_dict in messages[:3][::-1]], 1000) or messages[-1]["content"]
 
-    embedding = embedding_service.get_embedding(query)
+    embedding = embedding_service.get_embedding(query, None, None)
     query_results = qdrant_vector_store.search_text_chunks(room_id, embedding, threshold= 0.7)
     
     system_prompt = create_system_pompt(query_results)
@@ -127,12 +128,13 @@ def memo():
         chunk for chunk in default_text_spliter.split_text(text)
     ]
     embeddings = []
+    document_id = str(uuid.uuid4())
     for chunk in chunks:
         chunk_hash = get_hash(chunk)
         if is_duplicate_embedding(chunk_hash):
             continue
 
-        embedding = embedding_service.get_embedding(chunk, chunk_hash) 
+        embedding = embedding_service.get_embedding(chunk, document_id,chunk_hash) 
         embeddings.append(embedding)
     if len(embeddings) == 0:
         raise ValueError("All embeddings are duplicates")
