@@ -74,14 +74,12 @@ class QdrantVectorStore:
         payloads = self.client.search(
             collection_name=collection_name,
             query_vector=embedding.vector,
-            limit=limit
+            limit=limit,
+            score_threshold= threshold
         )
 
         result = []
         for item in payloads:
-            if item.score < threshold:
-                print(f"{item.score} is lower than {threshold}, try higher for includ this document: {item.payload}")
-                continue
             data = {
                 # "id": item.id, 
                 "similarity_score": item.score, 
