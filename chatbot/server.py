@@ -10,7 +10,9 @@ from utils import (
     handle_server_errors, 
     convert_messages, 
     create_system_pompt, 
-    concat_messages_till_threshold
+    concat_messages_till_threshold,
+    get_hash,
+    is_duplicate_embedding
 )
 import requests
 from response_database_manager import response_db_manager
@@ -18,12 +20,17 @@ from qdrant_vector_store import qdrant_vector_store
 from embedding_service import embedding_service
 import json
 from paho.mqtt.publish import single
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 server_print = lambda content: app.logger.info(content)
 host = socket.gethostname()
 
+
+default_text_spliter = RecursiveCharacterTextSplitter(
+    chunk_size = 500, chunk_overlap  = 50, length_function = len, add_start_index = True
+)
 
 def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], content:str, is_message_persist: bool = False) -> requests.Response:
     '''
@@ -83,10 +90,12 @@ def answer():
     response_dict = {
         **bot.bot_response.to_dict(),
         "asker_id": asker_id,
-        "room_id": room_id
+        "room_id": room_id,
+        "document_sources": list(set([
+            result["document_id"] for result in query_results
+        ]))
     }
-
-    response_db_manager.save_response(response_dict)
+    print(response_dict, flush= True)
     return response_dict
 
 @app.route("/count_tokens", methods=["POST"])
@@ -108,10 +117,26 @@ def memo():
     text_length = len(text)
     size_limit = 15000 if is_file_upload else 3000
 
+    if text_length == 0:
+        raise ValueError(f"Abort empty text memo request")
+
     if text_length > size_limit:
         raise ValueError(f"Text length must shorter than {size_limit}, entering {text_length}")
-    embeddings = embedding_service.get_embedding_list(text)
 
+    chunks = [
+        chunk for chunk in default_text_spliter.split_text(text)
+    ]
+    embeddings = []
+    for chunk in chunks:
+        chunk_hash = get_hash(chunk)
+        if is_duplicate_embedding(chunk_hash):
+            continue
+
+        embedding = embedding_service.get_embedding(chunk, chunk_hash) 
+        embeddings.append(embedding)
+    if len(embeddings) == 0:
+        raise ValueError("All embeddings are duplicates")
+    
     '''
     "is_ok": is_ok,
     "collection_name": collection_name,

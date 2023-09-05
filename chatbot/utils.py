@@ -2,6 +2,8 @@ import traceback
 import functools
 import os
 import datetime
+import hashlib
+import requests
 
 def get_current_datetime() -> str:
     _format = "%Y-%m-%d %H:%M:%S.%f"
@@ -101,4 +103,28 @@ def convert_messages(messages: list[dict[str, str]]) -> list[dict[str, str]]:
             {"role": role, "content": content}
         )
     return converted_messages
-            
+
+
+def get_hash(string: str) -> str:
+    return hashlib.sha256(string.encode("utf-8")).hexdigest()
+
+def is_duplicate_embedding(text_hash: str) -> str:
+    query_api = f"http://query_manager:5000/query"
+    sql = f'''
+    SELECT CASE 
+    WHEN subquery.count = 1 THEN TRUE 
+    ELSE FALSE 
+    END 
+    AS is_exists
+    FROM (
+    SELECT COUNT(*) AS "count"
+    FROM embeddings
+    WHERE text_hash = '{text_hash}'
+    ) AS subquery;
+    '''
+    post_json = {
+            "query": sql
+    }
+    return requests.post(
+        query_api, json= post_json
+    ).json()["data"].pop()["is_exists"] == 1

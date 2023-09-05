@@ -67,7 +67,7 @@ CREATE TABLE
         embedding_id INT AUTO_INCREMENT PRIMARY KEY,
         collection_name VARCHAR(36) NOT NULL,
         document_id VARCHAR(36) NOT NULL,
-        chunk_id VARCHAR(36) NOT NULL,
+        chunk_id VARCHAR(36) NOT NULL, ## for qdrant uuid
         text TEXT NOT NULL,
         text_hash VARCHAR(64) NOT NULL UNIQUE,
         # hash is saved in a form of {collection_name-hash}
