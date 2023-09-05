@@ -36,6 +36,10 @@ def login_required(func):
     query_user_api = "http://auth:5000/query_user_with_sid"
     @functools.wraps(func)
     def decorated(*args, **kwargs):
+        is_ai = request.get_json().get("is_ai", False)
+        if is_ai:
+            return func(*args, **kwargs)
+
         response = requests.post(
             query_user_api, json= {
                 "sid": request.cookies.get("sid")
@@ -46,17 +50,14 @@ def login_required(func):
                 "data": None,
                 "error": "SID Unauthorized"
             }, 401
-        
+
         user_dict = response.json()["data"]
         if user_dict is None:
             return {
                 "data": None,
                 "error": "Please login first before this API call."
             }, 401
-
         request.json["user"] = user_dict
-
-
         return func(*args, **kwargs)
         
     return decorated

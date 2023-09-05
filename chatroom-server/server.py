@@ -128,7 +128,7 @@ def get_room_info():
 @app.route("/emit_message_to_room", methods=["POST"])
 @handle_server_errors
 @login_required
-def emit_regular_message_to_room():
+def emit_message_to_room():
     '''
     {
         "content": str
@@ -137,16 +137,23 @@ def emit_regular_message_to_room():
     } 
     '''
     request_json = request.get_json()
-    user_id = request_json["user"]["user_id"]
-    user_name = request_json["user"]["user_name"]
+    user_dict = request_json["user"]
+    user_id = user_dict["user_id"]
+    user_name = user_dict["user_name"]
     full_id = f"{user_id}-{user_name}"
+
     message_type = request_json.get("message_type")
     is_memo = request_json.get("is_memo", False)
-    
+    is_ai = request_json.get("is_ai", False)
     content = converter.convert(request_json["content"]) #required
-    room_id = room_manager.get_user_location(full_id)
+    
+    room_id = (
+        request_json["room_id"] if is_ai 
+        else room_manager.get_user_location(full_id)
+    ) 
     room = room_manager.get_room_by_id(room_id)
     socket_event = room.get_socket_event(message_type)
+
     payload = {
             "data": {"user_id": user_id, "content": content, "user_name": user_name},
             "socket_event": socket_event
@@ -166,38 +173,6 @@ def emit_regular_message_to_room():
     return {
         **chat_message.to_dict(), "is_message_persist": is_message_persist
     }
-
-@app.route("/save_ai_message", methods=["POST"])
-@handle_server_errors
-def save_ai_message():
-    '''
-    {
-        "message_type": message_type,
-        "room_id": room_id,
-        "user_id": 1, # 1 is openAI
-        "content": content,
-        "is_message_persist": is_message_persist
-    }
-    '''
-    request_json = request.get_json()
-    content = converter.convert(request_json["content"])
-    room_id = request_json["room_id"]
-    user_id = request_json["user_id"] # 1
-    user_name = request_json["user_name"] # 1
-    message_type = request_json["message_type"]
-    is_memo = request_json.get("is_memo", False)
-
-
-    room = room_manager.get_room_by_id(room_id)
-    chat_message = ChatMessage.create_chat_message(
-        message_type, user_id, user_name, room_id, content, is_memo
-    )
-    room.add_message(
-        chat_message
-    )
-
-
-    return chat_message.to_dict()
 
 
 @app.route("/answer", methods = ["POST"])

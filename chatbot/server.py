@@ -12,7 +12,8 @@ from utils import (
     create_system_pompt, 
     concat_messages_till_threshold,
     get_hash,
-    is_duplicate_embedding
+    is_duplicate_embedding,
+    query_ai_user_dict
 )
 import requests
 from response_database_manager import response_db_manager
@@ -22,18 +23,18 @@ import json
 from paho.mqtt.publish import single
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import uuid
+
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-
 server_print = lambda content: app.logger.info(content)
 host = socket.gethostname()
 
-
+ai_user_dict = query_ai_user_dict()
 default_text_spliter = RecursiveCharacterTextSplitter(
     chunk_size = 500, chunk_overlap  = 50, length_function = len, add_start_index = True
 )
 
-def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], content:str, is_message_persist: bool = False) -> requests.Response:
+def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], content:str, is_message_persist: bool = False) -> requests.Response | None:
     '''
     {
         "message_type": "regular" | "ai"
@@ -43,23 +44,28 @@ def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], 
         "is_message_persist": bool
     } 
     '''
+    user_id = ai_user_dict["user_id"],
+    user_name = ai_user_dict["user_name"],
     post_json = {
         "message_type": message_type,
         "room_id": room_id,
-        "user_id": 1, # 1 is openAI
-        "user_name": "openai",
+        "user": {
+            "user_id": user_id,
+            "user_name": user_name,
+        },
+        "is_ai": True,
         "content": content,
         "is_message_persist": is_message_persist
     }
     socket_event = f"{message_type}/{room_id}"
     topic = f"message/{socket_event}"
     payload = {
-            "data": {"user_id": 1,"content": content, "is_message_persist": is_message_persist},
+            "data": {"user_id": user_id,"content": content, "is_message_persist": is_message_persist},
             "socket_event": socket_event
     }
     single(topic, json.dumps(payload), 1, hostname= "mosquitto")
     if is_message_persist: # only post if true
-        response = requests.post("http://chatroom-server:5000/save_ai_message", json= post_json)
+        response = requests.post("http://chatroom-server:5000/emit_message_to_room", json= post_json)
         return response
 
 @app.route("/")
