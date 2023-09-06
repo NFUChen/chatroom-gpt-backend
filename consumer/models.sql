@@ -67,16 +67,27 @@ CREATE TABLE
         embedding_id INT AUTO_INCREMENT PRIMARY KEY,
         collection_name VARCHAR(36) NOT NULL,
         document_id VARCHAR(36) NOT NULL,
-        chunk_id VARCHAR(36) NOT NULL, ## for qdrant uuid
+        chunk_id VARCHAR(36) NOT NULL,
+        ## for qdrant uuid
         text TEXT NOT NULL,
         text_hash VARCHAR(64) NOT NULL UNIQUE,
         # hash is saved in a form of {collection_name-hash}
         updated_at DATETIME NOT NULL ON UPDATE CURRENT_TIMESTAMP,
         vector JSON NOT NULL,
-        UNIQUE KEY `unique_key` (`collection_name`, `text_hash`),
+        UNIQUE KEY `unique_key` (
+            `collection_name`,
+            `text_hash`
+        ),
         INDEX (collection_name),
         INDEX (document_id),
         FOREIGN KEY (collection_name) REFERENCES rooms(room_id)
+    );
+
+CREATE TABLE
+    IF NOT EXISTS api_keys (
+        key_id INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
+        api_key CHAR(51) UNIQUE NOT NULL,
+        is_disabled BOOLEAN DEFAULT 0 NOT NULL
     );
 
 INSERT INTO
