@@ -45,9 +45,8 @@ def log_error(exception: Exception) -> None:
 Role =  Literal["system", "user", "assistant"]
 
 class ChatBot:
-    def __init__(self, api_key: str, system_prompt: str,chat_messages: list[dict[str, str]], is_token_lazy_eval: bool = True) -> None:
+    def __init__(self, system_prompt: str,chat_messages: list[dict[str, str]], is_token_lazy_eval: bool = True) -> None:
         self.messages = [self._create_system_prompt(system_prompt), *chat_messages]
-        self.api_key = api_key
         
         self.source_token_count = (
             len("|".join([msg_dict["content"] for msg_dict in self.messages])) 
@@ -72,7 +71,6 @@ class ChatBot:
         self.current_message += msg
 
     def answer(self) -> Iterable[str]:
-        openai.api_key = self.api_key
         chosen_model = self.model
         if chosen_model is None:
             raise ValueError(f"Token exceed max context length: {self.MAX_TOKENS_ACCEPTED}, getting {self.source_token_count}")
@@ -98,11 +96,12 @@ class ChatBot:
         except Exception as error:
             log_error(error)
         finally:
-            reponse_message_token_count = num_tokens_from_messages([
-                {
-                "role": "assistant", "content": self.current_message
-            }
-            ])
+            # reponse_message_token_count = num_tokens_from_messages([
+            #     {
+            #     "role": "assistant", "content": self.current_message
+            # }
+            # ])
+            reponse_message_token_count = len(self.current_message)
             self.bot_response = ChatBotResponse(
                 model_name= chosen_model,
                 response_id= str(uuid.uuid4()),
@@ -111,5 +110,5 @@ class ChatBot:
                 answer= self.current_message,
                 prompt_tokens= self.source_token_count,
                 response_tokens= reponse_message_token_count,
-                api_key= self.api_key
+                api_key= openai.api_key
             )
