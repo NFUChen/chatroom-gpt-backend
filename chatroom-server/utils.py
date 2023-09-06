@@ -3,6 +3,8 @@ from flask import request
 import requests
 import traceback
 
+query_api = f"http://query_manager:5000/query"
+
 def get_error_detail(e: Exception):
     error_name = e.__class__.__name__
     trace_back = traceback.extract_tb(e.__traceback__)
@@ -61,3 +63,14 @@ def login_required(func):
         return func(*args, **kwargs)
         
     return decorated
+
+def query_api_keys() -> list[str]:
+    sql = "SELECT api_key FROM api_keys WHERE is_disabled = 0"
+    post_json = {
+            "query": sql
+    }
+    key_dicts = requests.post(
+        query_api, json= post_json
+    ).json()["data"]
+
+    return [_dict["api_key"] for _dict in key_dicts]
