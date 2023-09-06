@@ -2,24 +2,37 @@ from flask import Flask, request
 from flask_cors import CORS
 
 from chat_room_utils import room_manager
-from utils import handle_server_errors, login_required
+from utils import handle_server_errors, login_required, query_api_keys
 from room import Room
 from chat_message import ChatMessage
 from paho.mqtt.publish import single
 import json
 import logging
-logging.basicConfig(level=logging.DEBUG)
+from api_key_load_balancer import ApiKeyLoadBalancer
 import opencc
+import requests
+import threading
 
+logging.basicConfig(level=logging.DEBUG)
+keys = query_api_keys()
+api_key_load_balancer = ApiKeyLoadBalancer(keys)
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 converter = opencc.OpenCC('s2twp.json')
+CHATBOT_SERVER = "http://chatbot:5000"
 
 
 @app.route("/")
 def index():
     return "Welcome to chatroom central socket server"
+
+@app.route("/update_api_keys")
+def update_api_keys():
+    new_keys = query_api_keys()
+    global api_key_load_balancer
+    api_key_load_balancer = ApiKeyLoadBalancer(new_keys)
+    return "ok"
 
 @app.route("/join_room", methods = ["POST"])
 @handle_server_errors
@@ -174,27 +187,69 @@ def emit_message_to_room():
         **chat_message.to_dict(), "is_message_persist": is_message_persist
     }
 
-
-@app.route("/answer", methods = ["POST"])
+@app.route("/cmd", methods = ["POST"])
 @handle_server_errors
 @login_required
-def answer():
+def cmd():
+    '''
+    This route is give necessary information for accessing other services that may block the server thread 
+    (e.g., answer the users question, create embedding for memorization), 
+    such operations will be outsourced to other services
+    '''
+
     request_json = request.get_json()
+    is_test = request_json.get("is_test")
+    
     user_id = request_json["user"]["user_id"]
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
     room_id = room_manager.get_user_location(full_id)
     room = room_manager.get_room_by_id(room_id)
-    if room.is_locked:
-        raise ValueError(f"Room: {room_id} is currently locked, getting answer key is forbidden")
+    if room_manager.is_room_locked(room_id):
+        raise ValueError(f"The AI assistant is currently answering the question, please waiting it to unlock the room {room_id}")
     
     post_json = {
-        "messages": [message.to_dict() for message in room.get_ai_messages(3)],
-        "api_key": "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",
         "room_id": room_id,
-        "asker_id": user_id
+        "user_id": user_id,
+        "user_name": user_name
     }
+    
+    messages = [message.to_dict() for message in room.get_ai_messages(3)]
+    
+    cmd_lookup = [
+        ("answer", "messages", messages), # operation_name, post_json_key, post_json_value
+        ("answer", "prompt", request_json.get("prompt")),
+        ("memo", "prompt", request_json.get("prompt"))
+    ]
+
+    operation = request_json.get("operation")
+    for operation_name, post_json_key, post_json_value in cmd_lookup:
+        if operation == operation_name:
+            post_json[post_json_key] = post_json_value
+
+    post_json["api_key"] = api_key_load_balancer.get_key()
+    if is_test:
+        return post_json
+    
+    def wrapper():
+       
+        if operation == "answer":
+            print(f"Lock the room: {room_id}", flush= True)
+            room_manager.lock_room(room_id)
+
+        resp = requests.post(f"{CHATBOT_SERVER}/{operation}", json= post_json)
+        print(f"Posting json: {post_json}")
+        print(resp.json(), flush= True)
+        
+        if operation == "answer":
+            room_manager.unlock_room(room_id)
+            print(f"Unlock the room: {room_id}", flush= True)
+    
+    threading.Thread(target= wrapper).start()
+
+    
     return post_json
+
 
 @app.route("/acquire_room_lock") # the lock is acquired by robot, so no need for login
 @handle_server_errors

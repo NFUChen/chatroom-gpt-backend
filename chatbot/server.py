@@ -23,6 +23,8 @@ import json
 from paho.mqtt.publish import single
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import uuid
+import openai
+import time
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -33,8 +35,9 @@ ai_user_dict = query_ai_user_dict()
 default_text_spliter = RecursiveCharacterTextSplitter(
     chunk_size = 500, chunk_overlap  = 50, length_function = len, add_start_index = True
 )
+CHATROOM_SERVER = "http://chatroom-server:5000"
 
-def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], content:str, is_message_persist: bool = False) -> requests.Response | None:
+def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], user_id: str, user_name: str,content:str, is_message_persist: bool = False) -> requests.Response | None:
     '''
     {
         "message_type": "regular" | "ai"
@@ -44,8 +47,6 @@ def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], 
         "is_message_persist": bool
     } 
     '''
-    user_id = ai_user_dict["user_id"],
-    user_name = ai_user_dict["user_name"],
     post_json = {
         "message_type": message_type,
         "room_id": room_id,
@@ -65,8 +66,8 @@ def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], 
     }
     single(topic, json.dumps(payload), 1, hostname= "mosquitto")
     if is_message_persist: # only post if true
-        response = requests.post("http://chatroom-server:5000/emit_message_to_room", json= post_json)
-        return response
+        response = requests.post(f"{CHATROOM_SERVER}/emit_message_to_room", json= post_json)
+        return response.json()
 
 @app.route("/")
 def index():
@@ -76,34 +77,44 @@ def index():
 @handle_server_errors
 def answer():
     request_json = request.get_json()
-    messages = convert_messages(request_json["messages"])
-    api_key = request_json["api_key"]
+    prompt = request_json["prompt"]
+    openai.api_key = request_json["api_key"]
     room_id = request_json["room_id"]
-    asker_id = request_json["asker_id"]
-    message_type = "ai"
-    query = concat_messages_till_threshold([msg_dict["content"] for msg_dict in messages[:3][::-1]], 1000) or messages[-1]["content"]
+    user_id = request_json["user_id"]
+    user_name = request_json["user_name"]
+    messages_with_prompt = convert_messages([*request_json["messages"], {"user_id": user_id, "content": prompt}])
+    
+    query = concat_messages_till_threshold([msg_dict["content"] for msg_dict in messages_with_prompt[::-1]], 1000) or messages_with_prompt[-1]["content"]
 
     embedding = embedding_service.get_embedding(query, None, None)
     query_results = qdrant_vector_store.search_text_chunks(room_id, embedding, threshold= 0.7)
     
     system_prompt = create_system_pompt(query_results)
     print(system_prompt, flush= True)
-    bot = ChatBot(api_key, system_prompt, messages)
-    for current_message in bot.answer():
-        emit_message_to_room(room_id, message_type, current_message)
+    ai_id = ai_user_dict["user_id"]
+    ai_name = ai_user_dict["user_name"]
 
-    emit_message_to_room(room_id, message_type, current_message, is_message_persist= True)
+    message_type = "ai"
+
+    emit_message_to_room(room_id, message_type, user_id,user_name ,prompt)
+    bot = ChatBot(system_prompt, messages_with_prompt)
+    for current_message in bot.answer():
+        emit_message_to_room(room_id, message_type,ai_id ,ai_name,current_message)
+
+    emit_message_to_room(room_id, message_type, user_id,user_name , prompt, is_message_persist= True)
+    time.sleep(1)
+    emit_message_to_room(room_id, message_type, ai_id ,ai_name,current_message, is_message_persist= True)
 
     response_dict = {
         **bot.bot_response.to_dict(),
-        "asker_id": asker_id,
+        "user_id": user_id,
         "room_id": room_id,
         "document_sources": list(set([
             result["document_id"] for result in query_results
         ]))
     }
     print(response_dict, flush= True)
-    return response_dict
+    return "ok"
 
 @app.route("/count_tokens", methods=["POST"])
 def count_tokens():
@@ -118,20 +129,21 @@ def count_tokens():
 def memo():
     request_json = request.get_json()
     room_id = request_json["room_id"]
-    text = request_json["text"]
+    openai.api_key = request_json["api_key"]
+    prompt = request_json["prompt"]
     is_file_upload = request_json.get("is_file_upload")
     
-    text_length = len(text)
+    prompt_length = len(prompt)
     size_limit = 15000 if is_file_upload else 3000
 
-    if text_length == 0:
+    if prompt_length == 0:
         raise ValueError(f"Abort empty text memo request")
 
-    if text_length > size_limit:
-        raise ValueError(f"Text length must shorter than {size_limit}, entering {text_length}")
+    if prompt_length > size_limit:
+        raise ValueError(f"Prompt length must shorter than {size_limit}, entering {prompt_length}")
 
     chunks = [
-        chunk for chunk in default_text_spliter.split_text(text)
+        chunk for chunk in default_text_spliter.split_text(prompt)
     ]
     embeddings = []
     document_id = str(uuid.uuid4())
@@ -139,8 +151,7 @@ def memo():
         chunk_hash = get_hash(chunk)
         if is_duplicate_embedding(chunk_hash):
             continue
-
-        embedding = embedding_service.get_embedding(chunk, document_id,chunk_hash) 
+        embedding = embedding_service.get_embedding(chunk, document_id, chunk_hash) 
         embeddings.append(embedding)
     if len(embeddings) == 0:
         raise ValueError("All embeddings are duplicates")
