@@ -1,12 +1,7 @@
-import openai
 from openai.embeddings_utils import get_embedding
 from dataclasses import dataclass
 from utils import get_current_datetime
-
-
-openai.api_key = "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"
-
-
+import uuid
 @dataclass
 class Embedding:
     document_id: str
@@ -28,7 +23,7 @@ class EmbeddingService:
         text_vector = get_embedding(text, engine= self.MODEL)
         return Embedding(
             document_id= document_id,
-            chunk_id= document_id,
+            chunk_id= str(uuid.uuid4()),
             text= text,
             text_hash= _hash,
             updated_at= get_current_datetime(),
