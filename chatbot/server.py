@@ -9,11 +9,11 @@ from chatbot import ChatBot
 from utils import (
     handle_server_errors, 
     convert_messages, 
-    create_system_pompt, 
-    concat_messages_till_threshold,
+    create_assistant_pompt,
     get_hash,
     is_duplicate_embedding,
-    query_ai_user_dict
+    query_ai_user_dict,
+    create_memorization_prompt
 )
 import requests
 from response_database_manager import response_db_manager
@@ -25,17 +25,28 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import uuid
 import openai
 import time
+import opencc
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 server_print = lambda content: app.logger.info(content)
 host = socket.gethostname()
+converter = opencc.OpenCC('s2twp.json')
 
 ai_user_dict = query_ai_user_dict()
 default_text_spliter = RecursiveCharacterTextSplitter(
     chunk_size = 500, chunk_overlap  = 50, length_function = len, add_start_index = True
 )
 CHATROOM_SERVER = "http://chatroom-server:5000"
+
+def validate_prompt(prompt: str, size_limit: int = 15000) -> None:
+    prompt_length = len(prompt)
+
+    if prompt_length == 0:
+        raise ValueError(f"Abort empty text memo request")
+
+    if prompt_length > size_limit:
+        raise ValueError(f"Prompt length must shorter than {size_limit}, entering {prompt_length}")
 
 def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], user_id: str, user_name: str,content:str, is_message_persist: bool = False) -> requests.Response | None:
     '''
@@ -83,13 +94,13 @@ def answer():
     user_id = request_json["user_id"]
     user_name = request_json["user_name"]
     messages_with_prompt = convert_messages([*request_json["messages"], {"user_id": user_id, "content": prompt}])
-    
-    query = concat_messages_till_threshold([msg_dict["content"] for msg_dict in messages_with_prompt[::-1]], 1000) or messages_with_prompt[-1]["content"]
+    query = messages_with_prompt[-1]["content"]
 
     embedding = embedding_service.get_embedding(query, None, None)
-    query_results = qdrant_vector_store.search_text_chunks(room_id, embedding, threshold= 0.7)
+    query_results = qdrant_vector_store.search_text_chunks(room_id, embedding, threshold= 0.8)
+
     
-    system_prompt = create_system_pompt(query_results)
+    system_prompt = create_assistant_pompt(query_results)
     print(system_prompt, flush= True)
     ai_id = ai_user_dict["user_id"]
     ai_name = ai_user_dict["user_name"]
@@ -123,24 +134,40 @@ def count_tokens():
     num_tokens = num_tokens_from_messages(messages)
     return jsonify({"num_tokens": num_tokens, "host": host}), 200
 
+@app.route("/improve_prompt", methods=["POST"])
+@handle_server_errors
+def improve_prompt():
+    request_json = request.get_json()
+
+    openai.api_key = request_json["api_key"]
+    prompt = request_json["prompt"]
+    user_id = request_json["user_id"]
+    lang = request_json["language"]
+
+    socket_event = f"prompt/{user_id}"
+    topic = f"message/{socket_event}"
+    validate_prompt(prompt)
+    system_prompt = create_memorization_prompt(prompt, lang)
+    bot = ChatBot(system_prompt, [])
+    for current_message in bot.answer():
+        payload = {
+            "data": {"user_id": user_id,"content": current_message},
+            "socket_event": socket_event
+        }
+        single(topic, json.dumps(payload), 1, hostname= "mosquitto")
+
+    payload["data"]["is_message_persist"] = True
+    payload["data"]["content"] = converter.convert(payload["data"]["content"])
+    single(topic, json.dumps(payload), 1, hostname= "mosquitto")
 
 @app.route("/memo", methods=["POST"])
 @handle_server_errors
 def memo():
     request_json = request.get_json()
-    room_id = request_json["room_id"]
     openai.api_key = request_json["api_key"]
+    room_id = request_json["room_id"]
     prompt = request_json["prompt"]
-    is_file_upload = request_json.get("is_file_upload")
-    
-    prompt_length = len(prompt)
-    size_limit = 15000 if is_file_upload else 3000
-
-    if prompt_length == 0:
-        raise ValueError(f"Abort empty text memo request")
-
-    if prompt_length > size_limit:
-        raise ValueError(f"Prompt length must shorter than {size_limit}, entering {prompt_length}")
+    validate_prompt(prompt)
 
     chunks = [
         chunk for chunk in default_text_spliter.split_text(prompt)

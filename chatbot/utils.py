@@ -1,3 +1,4 @@
+from typing import Literal
 import traceback
 import functools
 import os
@@ -15,7 +16,7 @@ def get_current_datetime() -> str:
 
 
 COMPANY_NAME = os.environ["COMPANY_NAME"]
-def create_system_pompt(query_results: list[dict[str, str]]) -> str:
+def create_assistant_pompt(query_results: list[dict[str, str]]) -> str:
     query_result_string = ""
     for doc in query_results:
         query_result_string += f"{doc}\n"
@@ -45,6 +46,28 @@ Current timestamp: {get_current_datetime()}
 Query result:
 {query_result_string}
     """
+
+def create_memorization_prompt(prompt: str, lang: Literal["eng", "chi"]) -> str:
+    lang_lookup = {
+        "eng": "English",
+        "chi": "Traditional Chinese"
+    }
+    if lang not in lang_lookup:
+        raise ValueError(f"Invalid target language for prompt improvement, please enter one of the following: {lang_lookup.keys()}, entering {lang}")
+
+    return f'''
+Please provide the data you intend to store in long-term memory (i.e., a vector database).
+**Guidelines:**
+    - Ensure the data is accurate, relevant, and well-structured in {lang_lookup[lang]}.
+    - If needed, paraphrase or summarize the content to enhance its quality.
+    - Ensure that any modifications made do not alter the original meaning of the content.
+    - Adhere to your specified language consistently.
+    - If the provided content is an article, please exclude noisy data and preserve only the main body of the article.
+
+You may exclude introductory phrases like "The data to be input into long-term memory is as follows:" and provide the modified prompt below.
+Here is the data you are given:
+    {prompt}
+    '''
 
 def get_error_detail(e: Exception):
     error_name = e.__class__.__name__
