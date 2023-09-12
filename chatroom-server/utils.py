@@ -47,12 +47,6 @@ def login_required(func):
                 "sid": request.cookies.get("sid")
             }
         )
-        if response.status_code == 401:
-            return {
-                "data": None,
-                "error": "SID Unauthorized"
-            }, 401
-
         user_dict = response.json()["data"]
         if user_dict is None:
             return {
