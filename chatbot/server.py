@@ -12,13 +12,14 @@ from utils import (
     create_assistant_pompt,
     get_hash,
     is_duplicate_embedding,
+    query_all_embeddings,
     query_ai_user_dict,
     create_memorization_prompt
 )
 import requests
 from response_database_manager import response_db_manager
 from qdrant_vector_store import qdrant_vector_store
-from embedding_service import embedding_service
+from embedding_service import embedding_service, Embedding
 import json
 from paho.mqtt.publish import single
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -99,8 +100,16 @@ def answer():
     embedding = embedding_service.get_embedding(query, None, None)
     query_results = qdrant_vector_store.search_text_chunks(room_id, embedding, threshold= 0.8)
 
+    relevant_docs = []
+    for payload in query_results:
+        document_id = payload["document_id"]
+        chunk_id = payload["chunk_id"]
+        contexts = embedding_service.get_adjancent_embeddings(document_id, chunk_id)
+        relevant_docs.append(payload)
+        relevant_docs.extend(contexts)
+
     
-    system_prompt = create_assistant_pompt(query_results)
+    system_prompt = create_assistant_pompt(relevant_docs)
     print(system_prompt, flush= True)
     ai_id = ai_user_dict["user_id"]
     ai_name = ai_user_dict["user_name"]
@@ -199,6 +208,27 @@ def memo():
     
     return upsert_resp
 
+@app.route("/init_qdrant_store")
+def init_qdrant_store():
+    all_embeddings = query_all_embeddings()
+    for embedding_dict in all_embeddings:
+        collection_name = embedding_dict["collection_name"]
+        embedding = Embedding(
+            document_id= embedding_dict["document_id"],
+            chunk_id= embedding_dict["chunk_id"],
+            text= embedding_dict["text"],
+            text_hash= embedding_dict["text_hash"],
+            updated_at= embedding_dict["updated_at"],
+            vector= embedding_dict["vector"]
+        )
+        print(f"Upserting: {embedding.chunk_id} into {collection_name}")
+        qdrant_vector_store.upsert_text(collection_name, [embedding])
+    return {"message": "ok", "upserted_rows": len(all_embeddings)}
+        
+
+
+
 
 if __name__ == "__main__":
+    
     app.run(host="0.0.0.0", debug= True)

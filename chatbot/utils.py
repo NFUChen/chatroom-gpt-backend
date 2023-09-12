@@ -5,7 +5,7 @@ import os
 import datetime
 import hashlib
 import requests
-
+import ast
 query_api = f"http://query_manager:5000/query"
 
 def get_current_datetime() -> str:
@@ -161,3 +161,15 @@ def query_ai_user_dict() -> dict[str, str | int]:
     return requests.post(
         query_api, json= post_json
     ).json()["data"].pop()
+
+def query_all_embeddings() -> list[dict[str, str | list[float]]]:
+    sql = "SELECT * FROM embeddings"
+    post_json = {
+            "query": sql
+    }
+    embeddings = requests.post(
+        query_api, json= post_json
+    ).json()["data"]
+    for embedding in embeddings:
+        embedding["vector"] = ast.literal_eval(embedding["vector"])
+    return embeddings

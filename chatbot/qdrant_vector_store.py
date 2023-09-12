@@ -43,7 +43,7 @@ class QdrantVectorStore:
             self._set_up_collection(collection_name)
         points = [
             PointStruct(
-                id=embedding.chunk_id, 
+                id=embedding.chunk_id, # chunk id is here
                 vector= embedding.vector, 
                 payload={
                             "text": embedding.text, 
@@ -77,17 +77,12 @@ class QdrantVectorStore:
             limit=limit,
             score_threshold= threshold
         )
-
-        result = []
-        for item in payloads:
-            data = {
-                # "id": item.id, 
+        return [{
+                "chunk_id": item.id, # chunk id is here
                 "similarity_score": item.score, 
                 "text": item.payload["text"], 
                 "updated_at": item.payload["updated_at"], 
-                "document_id": item.payload["document_id"]
-            }
-            result.append(data)
-        return result
+                "document_id": item.payload["document_id"],
+            } for item in payloads]
     
 qdrant_vector_store = QdrantVectorStore()
