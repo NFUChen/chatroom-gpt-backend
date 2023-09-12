@@ -26,13 +26,11 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import uuid
 import openai
 import time
-import opencc
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 server_print = lambda content: app.logger.info(content)
 host = socket.gethostname()
-converter = opencc.OpenCC('s2twp.json')
 
 ai_user_dict = query_ai_user_dict()
 default_text_spliter = RecursiveCharacterTextSplitter(
@@ -166,7 +164,6 @@ def improve_prompt():
         single(topic, json.dumps(payload), 1, hostname= "mosquitto")
 
     payload["data"]["is_message_persist"] = True
-    payload["data"]["content"] = converter.convert(payload["data"]["content"])
     single(topic, json.dumps(payload), 1, hostname= "mosquitto")
 
 @app.route("/memo", methods=["POST"])

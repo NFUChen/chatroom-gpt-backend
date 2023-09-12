@@ -9,7 +9,6 @@ from paho.mqtt.publish import single
 import json
 import logging
 from api_key_load_balancer import ApiKeyLoadBalancer
-import opencc
 import requests
 import threading
 
@@ -19,7 +18,6 @@ api_key_load_balancer = ApiKeyLoadBalancer(keys)
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-converter = opencc.OpenCC('s2twp.json')
 CHATBOT_SERVER = "http://chatbot:5000"
 
 
@@ -158,7 +156,7 @@ def emit_message_to_room():
     message_type = request_json.get("message_type")
     is_memo = request_json.get("is_memo", False)
     is_ai = request_json.get("is_ai", False)
-    content = converter.convert(request_json["content"]) #required
+    content = request_json["content"] #required
     
     room_id = (
         request_json["room_id"] if is_ai 
