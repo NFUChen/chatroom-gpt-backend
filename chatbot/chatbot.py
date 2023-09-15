@@ -95,12 +95,8 @@ class ChatBot:
             yield self.current_message
         except Exception as error:
             log_error(error)
+            print(error)
         finally:
-            # reponse_message_token_count = num_tokens_from_messages([
-            #     {
-            #     "role": "assistant", "content": self.current_message
-            # }
-            # ])
             reponse_message_token_count = len(self.current_message)
             self.bot_response = ChatBotResponse(
                 model_name= chosen_model,

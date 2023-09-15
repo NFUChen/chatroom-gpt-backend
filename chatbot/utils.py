@@ -16,11 +16,7 @@ def get_current_datetime() -> str:
 
 
 COMPANY_NAME = os.environ["COMPANY_NAME"]
-def create_assistant_pompt(query_results: list[dict[str, str]]) -> str:
-    query_result_string = ""
-    for doc in query_results:
-        query_result_string += f"{doc}\n"
-
+def create_assistant_base_pompt() -> str:
     return f"""
 You are representing {COMPANY_NAME} and will receive messages in a multi-user Chinese chat context. 
 Your primary responsibility is to answer the user's questions based on given contextual information. 
@@ -40,12 +36,35 @@ Please strictly adhere to the following guidelines:
     - Respond in a manner that resembles a natural conversation between an AI assistant and a user. 
     - Avoid using technical jargon or overly formal language.
     - Prioritize provided context over chat history when confirming relevant information, especially in cases where no prior information was available on a topic.
-Execute this task while ensuring that your responses are accurate and helpful in both the database query and chat context scenarios.
-You are provided with the following contextual information (query result and current timestamp) for answering the question from the vector database:
+Execute this task while ensuring that your responses are accurate and helpful in chat context scenarios.\n
+"""
+
+def create_vector_store_context_prompt(query_results: list[dict[str, str]]) -> str:
+    query_result_string = ""
+    for doc in query_results:
+        query_result_string += f"{doc}\n"
+
+    return f'''
+You are provided with the following contextual information (query result from the vector database and current timestamp) for answering the question:
 Current timestamp: {get_current_datetime()}
 Query result:
 {query_result_string}
-    """
+'''
+
+def create_web_context_prompt(web_content: str) -> str:
+    return f'''
+You are provided with the following contextual information (content from the web in a form of your thinking process and current timestamp) for answering the question:
+Current timestamp: {get_current_datetime()}
+Query result:
+{web_content}
+'''
+
+def create_web_query_prompt(prompt: str, messages: list[dict[str, str]]) -> str:
+    return f"""
+Building upon the information discussed in the following chat messages:
+{messages}
+Please answer the following question: {prompt}
+"""
 
 def create_memorization_prompt(prompt: str, lang: Literal["eng", "chi"]) -> str:
     lang_lookup = {

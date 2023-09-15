@@ -217,6 +217,7 @@ def cmd():
     cmd_lookup = [
         ("answer", "messages", messages), # operation_name, post_json_key, post_json_value
         ("answer", "prompt", request_json.get("prompt")),
+        ("answer", "source", request_json.get("source")),
         ("memo", "prompt", request_json.get("prompt"))
     ]
 
@@ -230,18 +231,18 @@ def cmd():
         return post_json
     
     def wrapper():
-       
-        if operation == "answer":
-            print(f"Lock the room: {room_id}", flush= True)
-            room_manager.lock_room(room_id)
+        try:
+            if operation == "answer":
+                print(f"Lock the room: {room_id}", flush= True)
+                room_manager.lock_room(room_id)
 
-        resp = requests.post(f"{CHATBOT_SERVER}/{operation}", json= post_json)
-        print(f"Posting json: {post_json}")
-        print(resp.json(), flush= True)
-        
-        if operation == "answer":
-            room_manager.unlock_room(room_id)
-            print(f"Unlock the room: {room_id}", flush= True)
+            resp = requests.post(f"{CHATBOT_SERVER}/{operation}", json= post_json)
+            print(f"Posting json: {post_json}")
+            print(resp.json(), flush= True)
+        finally:
+            if operation == "answer":
+                room_manager.unlock_room(room_id)
+                print(f"Unlock the room: {room_id}", flush= True)
     
     threading.Thread(target= wrapper).start()
 

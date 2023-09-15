@@ -1,22 +1,17 @@
-from typing import Literal
+
 from flask import request
 from flask import Flask, jsonify
 from flask_cors import CORS
-import requests
 import socket
 from openai_utils import num_tokens_from_messages
 from chatbot import ChatBot
 from utils import (
     handle_server_errors, 
-    convert_messages, 
-    create_assistant_pompt,
     get_hash,
     is_duplicate_embedding,
     query_all_embeddings,
-    query_ai_user_dict,
     create_memorization_prompt
 )
-import requests
 from response_database_manager import response_db_manager
 from qdrant_vector_store import qdrant_vector_store
 from embedding_service import embedding_service, Embedding
@@ -25,59 +20,16 @@ from paho.mqtt.publish import single
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import uuid
 import openai
-import time
+from chatroom_answer_service import ChatRoomAnswerService
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 server_print = lambda content: app.logger.info(content)
 host = socket.gethostname()
 
-ai_user_dict = query_ai_user_dict()
 default_text_spliter = RecursiveCharacterTextSplitter(
     chunk_size = 500, chunk_overlap  = 50, length_function = len, add_start_index = True
 )
-CHATROOM_SERVER = "http://chatroom-server:5000"
-
-def validate_prompt(prompt: str, size_limit: int = 15000) -> None:
-    prompt_length = len(prompt)
-
-    if prompt_length == 0:
-        raise ValueError(f"Abort empty text memo request")
-
-    if prompt_length > size_limit:
-        raise ValueError(f"Prompt length must shorter than {size_limit}, entering {prompt_length}")
-
-def emit_message_to_room(room_id: str, message_type: Literal["regular" , "ai"], user_id: str, user_name: str,content:str, is_message_persist: bool = False) -> requests.Response | None:
-    '''
-    {
-        "message_type": "regular" | "ai"
-        "room_id": str
-        "user_id": str
-        "content": str
-        "is_message_persist": bool
-    } 
-    '''
-    post_json = {
-        "message_type": message_type,
-        "room_id": room_id,
-        "user": {
-            "user_id": user_id,
-            "user_name": user_name,
-        },
-        "is_ai": True,
-        "content": content,
-        "is_message_persist": is_message_persist
-    }
-    socket_event = f"{message_type}/{room_id}"
-    topic = f"message/{socket_event}"
-    payload = {
-            "data": {"user_id": user_id,"content": content, "is_message_persist": is_message_persist},
-            "socket_event": socket_event
-    }
-    single(topic, json.dumps(payload), 1, hostname= "mosquitto")
-    if is_message_persist: # only post if true
-        response = requests.post(f"{CHATROOM_SERVER}/emit_message_to_room", json= post_json)
-        return response.json()
 
 @app.route("/")
 def index():
@@ -88,51 +40,27 @@ def index():
 def answer():
     request_json = request.get_json()
     prompt = request_json["prompt"]
-    openai.api_key = request_json["api_key"]
+    api_key = request_json["api_key"]
     room_id = request_json["room_id"]
     user_id = request_json["user_id"]
     user_name = request_json["user_name"]
-    messages_with_prompt = convert_messages([*request_json["messages"], {"user_id": user_id, "content": prompt}])
-    query = messages_with_prompt[-1]["content"]
-
-    embedding = embedding_service.get_embedding(query, None, None)
-    query_results = qdrant_vector_store.search_text_chunks(room_id, embedding, threshold= 0.8)
-
-    relevant_docs = []
-    for payload in query_results:
-        document_id = payload["document_id"]
-        chunk_id = payload["chunk_id"]
-        contexts = embedding_service.get_adjancent_embeddings(document_id, chunk_id)
-        relevant_docs.append(payload)
-        relevant_docs.extend(contexts)
-
-    
-    system_prompt = create_assistant_pompt(relevant_docs)
-    print(system_prompt, flush= True)
-    ai_id = ai_user_dict["user_id"]
-    ai_name = ai_user_dict["user_name"]
-
-    message_type = "ai"
-
-    emit_message_to_room(room_id, message_type, user_id,user_name ,prompt)
-    bot = ChatBot(system_prompt, messages_with_prompt)
-    for current_message in bot.answer():
-        emit_message_to_room(room_id, message_type,ai_id ,ai_name,current_message)
-
-    emit_message_to_room(room_id, message_type, user_id,user_name , prompt, is_message_persist= True)
-    time.sleep(1)
-    emit_message_to_room(room_id, message_type, ai_id ,ai_name,current_message, is_message_persist= True)
-
-    response_dict = {
-        **bot.bot_response.to_dict(),
-        "user_id": user_id,
-        "room_id": room_id,
-        "document_sources": list(set([
-            result["document_id"] for result in query_results
-        ]))
+    messages = request_json["messages"]
+    answer_service = ChatRoomAnswerService(
+        prompt= prompt, 
+        api_key= api_key, 
+        room_id= room_id,
+        user_id= user_id,
+        user_name= user_name,
+        messages= messages
+    )
+    source = request_json.get("source", "db")
+    source_lookup = {
+        "db": answer_service.ask_vector_store,
+        "web": answer_service.ask_web
     }
-    print(response_dict, flush= True)
-    return "ok"
+    handler = source_lookup[source]
+
+    return handler()
 
 @app.route("/count_tokens", methods=["POST"])
 def count_tokens():
@@ -153,7 +81,6 @@ def improve_prompt():
 
     socket_event = f"prompt/{user_id}"
     topic = f"message/{socket_event}"
-    validate_prompt(prompt)
     system_prompt = create_memorization_prompt(prompt, lang)
     bot = ChatBot(system_prompt, [])
     for current_message in bot.answer():
@@ -173,7 +100,6 @@ def memo():
     openai.api_key = request_json["api_key"]
     room_id = request_json["room_id"]
     prompt = request_json["prompt"]
-    validate_prompt(prompt)
 
     chunks = [
         chunk for chunk in default_text_spliter.split_text(prompt)
@@ -221,6 +147,7 @@ def init_qdrant_store():
         print(f"Upserting: {embedding.chunk_id} into {collection_name}")
         qdrant_vector_store.upsert_text(collection_name, [embedding])
     return {"message": "ok", "upserted_rows": len(all_embeddings)}
+
         
 
 
