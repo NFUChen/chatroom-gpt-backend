@@ -31,7 +31,8 @@ Please strictly adhere to the following guidelines:
     - When faced with duplicate information across documents, typically resulting from initial disinformation, choose the instance with higher similarity scores and the most recent timestamp. 
     - When merging potentially conflicting documents, substitute outdated information with the latest updates, and ensure you offer a detailed explanation when presenting these instances.
     - You are encouraged to extract insights from multiple documents that share the same 'document_id' key while responding to the questions.
-    - Do not mention the source of information or the specific similarity score used in ranking the responses. Keep the responses natural and focused on the content.
+    - Do not mention the specific similarity score used in ranking the responses. Keep the responses natural and focused on the content.
+    - Mention the source of information especially when news, articles are provided, also attach source url if possible, and provide detailed explanation if needed.
     - Ensure that all responses are accurate and truthful. Avoid speculation or conjecture, and rely on verified information.
     - Respond in a manner that resembles a natural conversation between an AI assistant and a user. 
     - Avoid using technical jargon or overly formal language.
@@ -63,7 +64,9 @@ def create_web_query_prompt(prompt: str, messages: list[dict[str, str]]) -> str:
     return f"""
 Building upon the information discussed in the following chat messages:
 {messages}
+Also making sure you include the source the information in your response.
 Please answer the following question: {prompt}
+
 """
 
 def create_memorization_prompt(prompt: str, lang: Literal["eng", "chi"]) -> str:
@@ -118,11 +121,13 @@ def handle_server_errors(func):
             return {
                     "data": func(*args, **kwargs),
                     "error": None,
+                    "is_success": True 
             }, 200
         except Exception as error:
             return {
                 "data": None,
-                "error": get_error_detail(error)
+                "error": get_error_detail(error),
+                "is_success": False
             }, 200  # Return JSON response with error message and status code 500
     return decorated
 

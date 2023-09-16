@@ -6,11 +6,13 @@ def handle_server_errors(func):
         try:
             return {
                 "data": func(*args, **kwargs),
-                "error": None
+                "error": None,
+                "is_success": True
             }
         except Exception as error:
             return {
                 "data": None,
-                "error": str(error)
+                "error": str(error),
+                "is_success": False
             }, 200  # Return JSON response with error message and status code 500
     return decorated

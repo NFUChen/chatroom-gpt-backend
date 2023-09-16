@@ -38,7 +38,8 @@ def handle_server_errors(func):
             result = func(*args, **kwargs)
             result_json = {
                     "data": result,
-                    "error": None
+                    "error": None,
+                    "is_success": True
             }
             if "sid" in result:
                 sid = result.pop("sid")
@@ -50,12 +51,14 @@ def handle_server_errors(func):
         except UnauthorizedError as error:
             return {
                 "data": None,
-                "error": get_error_detail(error)
+                "error": get_error_detail(error),
+                "is_success": False
             }, 401
         
         except Exception as error:
             return {
                 "data": None,
-                "error": get_error_detail(error)
+                "error": get_error_detail(error),
+                "is_success": False
             }, 200  # Return JSON response with error message and status code 500
     return decorated

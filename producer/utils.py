@@ -28,11 +28,13 @@ def handle_server_errors(func):
         try:
             return {
                 "data": func(*args, **kwargs),
-                "error": None
+                "error": None,
+                "is_success": True
             }
         except Exception as error:
             return {
                 "data": None,
-                "error": get_error_detail(error)
+                "error": get_error_detail(error),
+                "is_success": False
             }, 200
     return decorated
