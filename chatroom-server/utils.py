@@ -54,12 +54,8 @@ def login_required(func):
         )
         user_dict = response.json()["data"]
         if user_dict is None:
-            return {
-                "data": None,
-                "error": "Please login first before this API call.",
-                "is_success": False,
-                "status_code": 401
-            }
+            raise ValueError("Please login first before this API call.")
+        
         request.json["user"] = user_dict
         return func(*args, **kwargs)
         
