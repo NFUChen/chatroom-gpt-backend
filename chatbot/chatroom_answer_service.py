@@ -1,4 +1,3 @@
-from typing import Any
 import requests
 from utils import (
     convert_messages,
@@ -13,17 +12,14 @@ from embedding_service import embedding_service
 from qdrant_vector_store import qdrant_vector_store
 from langchain_plugin.plugin_executor import PluginExecutor, get_plugin, GOOGLE_SEARCH
 import openai
-import json
-from paho.mqtt.publish import single
+from map_reduce_text_summarizer import MapReduceTextSummarizer
 import time
 from chatbot import ChatBot
-
-
 
 class ChatRoomAnswerService:
     ai_user_dict = query_ai_user_dict()
     CHATROOM_SERVER = "http://chatroom-server:5000"
-    def __init__(self, prompt: str, api_key: str, room_id: str, user_id: str, user_name: str,messages: list[dict[str, str]],) -> None:
+    def __init__(self, prompt: str, api_key: str, room_id: str, user_id: str, user_name: str,messages: list[dict[str, str]]) -> None:
         self.prompt = prompt
         self.__validate_prompt(self.prompt, 3000)
         openai.api_key = api_key
@@ -34,13 +30,11 @@ class ChatRoomAnswerService:
         self.messages_with_prompt = convert_messages([*messages, {"user_id": self.user_id, "content": self.prompt}])
         self.ai_id = self.ai_user_dict["user_id"]
         self.ai_name = self.ai_user_dict["user_name"]
-        
     def ask_vector_store(self) -> str:
         
         query = self.messages_with_prompt[-1]["content"]
         embedding = embedding_service.get_embedding(query, None, None)
         query_results = qdrant_vector_store.search_text_chunks(self.room_id, embedding, threshold= 0.8)
-
         relevant_docs = []
         for payload in query_results:
             document_id = payload["document_id"]
@@ -48,7 +42,11 @@ class ChatRoomAnswerService:
             contexts = embedding_service.get_adjancent_embeddings(document_id, chunk_id)
             relevant_docs.append(payload)
             relevant_docs.extend(contexts)
-        system_prompt = create_assistant_base_pompt() + create_vector_store_context_prompt(relevant_docs)
+
+        all_log = "\n".join(relevant_docs)
+        all_log = self.__summarize_if_text_exceed_context_window_limit(all_log, 8000)
+
+        system_prompt = create_assistant_base_pompt() + create_vector_store_context_prompt(all_log)
         bot = self.__bot_answer(system_prompt)
         return  {
             **bot.bot_response.to_dict(),
@@ -76,6 +74,9 @@ class ChatRoomAnswerService:
             self.__emit_message_to_room(self.ai_id ,self.ai_name,all_log)
         all_log = executor.get_logs()
         self.__emit_message_to_room(self.user_id,self.user_name, self.prompt)
+        
+        all_log = self.__summarize_if_text_exceed_context_window_limit(all_log, 8000)
+            
 
         system_prompt = create_assistant_base_pompt() + create_web_context_prompt(all_log)
         bot = self.__bot_answer(system_prompt)
@@ -86,6 +87,13 @@ class ChatRoomAnswerService:
             "room_id": self.room_id,
             "sorces": all_log
         }
+    
+    def __summarize_if_text_exceed_context_window_limit(self, text: str, context_window_limit: int = 8000) -> str:
+        if len(text) < context_window_limit:
+            return text
+        print(f"Content truncated warning: logs exceed 8000 words: getting {len(text)}, summarized into 4000 words article", flush= True)
+        summarizer = MapReduceTextSummarizer(openai_api_key= openai.api_key, question= self.prompt, text= text)
+        return summarizer.summarize()
     
     def __bot_answer(self, system_prompt: str) -> ChatBot:
         print(system_prompt, flush= True)

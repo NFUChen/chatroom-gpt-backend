@@ -43,7 +43,7 @@ Please strictly adhere to the following guidelines:
 Execute this task while ensuring that your responses are accurate and helpful in chat context scenarios.\n
 """
 
-def create_vector_store_context_prompt(query_results: list[dict[str, str]]) -> str:
+def create_vector_store_context_prompt(query_results: Any) -> str:
     query_result_string = ""
     for doc in query_results:
         query_result_string += f"{doc}\n"
