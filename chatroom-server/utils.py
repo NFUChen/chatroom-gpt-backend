@@ -1,7 +1,10 @@
+from typing import Any
 import functools
 from flask import request
 import requests
 import traceback
+import json
+from paho.mqtt.publish import single
 
 query_api = f"http://query_manager:5000/query"
 
@@ -70,3 +73,11 @@ def query_api_keys() -> list[str]:
     ).json()["data"]
 
     return [_dict["api_key"] for _dict in key_dicts]
+
+
+def emit_socket_event(socket_event: str, data: Any) -> None:
+    topic = f"message/{socket_event}"
+    payload = {
+            "data": data
+    }
+    single(topic, json.dumps(payload), 1, hostname= "mosquitto")

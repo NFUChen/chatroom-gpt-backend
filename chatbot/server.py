@@ -10,7 +10,8 @@ from utils import (
     get_hash,
     is_duplicate_embedding,
     query_all_embeddings,
-    create_memorization_prompt
+    create_memorization_prompt,
+    emit_socket_event
 )
 from response_database_manager import response_db_manager
 from qdrant_vector_store import qdrant_vector_store
@@ -80,18 +81,12 @@ def improve_prompt():
     lang = request_json["language"]
 
     socket_event = f"prompt/{user_id}"
-    topic = f"message/{socket_event}"
     system_prompt = create_memorization_prompt(prompt, lang)
     bot = ChatBot(system_prompt, [])
     for current_message in bot.answer():
-        payload = {
-            "data": {"user_id": user_id,"content": current_message},
-            "socket_event": socket_event
-        }
-        single(topic, json.dumps(payload), 1, hostname= "mosquitto")
-
-    payload["data"]["is_message_persist"] = True
-    single(topic, json.dumps(payload), 1, hostname= "mosquitto")
+        emit_socket_event(socket_event, {"user_id": user_id,"content": current_message})
+        
+    emit_socket_event(socket_event, {"user_id": user_id,"content": current_message,"is_message_persist": True})
 
 @app.route("/memo", methods=["POST"])
 @handle_server_errors

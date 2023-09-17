@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Any
 import traceback
 import functools
 import os
@@ -6,6 +6,9 @@ import datetime
 import hashlib
 import requests
 import ast
+import json
+from paho.mqtt.publish import single
+
 query_api = f"http://query_manager:5000/query"
 
 def get_current_datetime() -> str:
@@ -197,3 +200,10 @@ def query_all_embeddings() -> list[dict[str, str | list[float]]]:
     for embedding in embeddings:
         embedding["vector"] = ast.literal_eval(embedding["vector"])
     return embeddings
+
+def emit_socket_event(socket_event: str, data: Any) -> None:
+    topic = f"message/{socket_event}"
+    payload = {
+            "data": data
+    }
+    single(topic, json.dumps(payload), 1, hostname= "mosquitto")

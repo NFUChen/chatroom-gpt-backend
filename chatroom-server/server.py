@@ -2,11 +2,14 @@ from flask import Flask, request
 from flask_cors import CORS
 
 from chat_room_utils import room_manager
-from utils import handle_server_errors, login_required, query_api_keys
+from utils import (
+    handle_server_errors, 
+    login_required, 
+    query_api_keys,
+    emit_socket_event
+)
 from room import Room
 from chat_message import ChatMessage
-from paho.mqtt.publish import single
-import json
 import logging
 from api_key_load_balancer import ApiKeyLoadBalancer
 import requests
@@ -46,19 +49,14 @@ def join_room():
     joined_room = room_manager.user_join_room(full_id, room_id)
     socket_event = joined_room.get_socket_event("notification")
     notification = {
-            "user_id": user_id,
-            "user_name": user_name,
-            "is_join": True
+        "user_id": user_id,
+        "user_name": user_name,
+        "is_join": True
     }
 
-    payload = {
-            "data": notification,
-            "socket_event": socket_event
-        }
-    single(
-        f"message/{socket_event}", 
-        json.dumps(payload), 1, hostname= "mosquitto"
-    )
+    payload = {"data": notification}
+    emit_socket_event(socket_event, payload)
+
     return "ok"
 
 @app.route("/leave_room", methods = ["POST"])
@@ -78,15 +76,9 @@ def leave_room():
             "user_id": user_id,
             "is_join": False
     }
-    payload = {
-            "data": notification,
-            "socket_event": socket_event
-    }
-
-    single(
-        f"message/{socket_event}", 
-        json.dumps(payload), 1, hostname= "mosquitto"
-    )
+    payload = {"data": notification}
+    emit_socket_event(socket_event, payload)
+    
     return "ok"
 
 @app.route("/user_location", methods = ["POST"])
@@ -165,14 +157,10 @@ def emit_message_to_room():
     room = room_manager.get_room_by_id(room_id)
     socket_event = room.get_socket_event(message_type)
 
-    payload = {
-            "data": {"user_id": user_id, "content": content, "user_name": user_name},
-            "socket_event": socket_event
-    }
-    single(
-        f"message/{socket_event}", 
-        json.dumps(payload), 1, hostname= "mosquitto"
-    )
+    payload = {"data": {"user_id": user_id, "content": content, "user_name": user_name}}
+    emit_socket_event(socket_event, payload)
+
+
     is_message_persist = request_json.get("is_message_persist")
     chat_message = ChatMessage.create_chat_message(
         message_type, user_id, user_name ,room_id, content,is_memo

@@ -1,3 +1,4 @@
+from typing import Any
 import requests
 from utils import (
     convert_messages,
@@ -5,7 +6,8 @@ from utils import (
     create_assistant_base_pompt,
     create_vector_store_context_prompt,
     create_web_context_prompt,
-    create_web_query_prompt
+    create_web_query_prompt,
+    emit_socket_event
 )
 from embedding_service import embedding_service
 from qdrant_vector_store import qdrant_vector_store
@@ -15,7 +17,6 @@ import json
 from paho.mqtt.publish import single
 import time
 from chatbot import ChatBot
-
 
 
 
@@ -122,13 +123,8 @@ class ChatRoomAnswerService:
             "content": content,
             "is_message_persist": is_message_persist
         }
-        socket_event = f"{message_type}/{self.room_id}"
-        topic = f"message/{socket_event}"
-        payload = {
-                "data": {"user_id": user_id, "user_name": user_name,"content": content, "is_message_persist": is_message_persist},
-                "socket_event": socket_event
-        }
-        single(topic, json.dumps(payload), 1, hostname= "mosquitto")
+        msg = {"user_id": user_id, "user_name": user_name,"content": content, "is_message_persist": is_message_persist}
+        emit_socket_event(f"{message_type}/{self.room_id}", msg)
         if is_message_persist: # only post if true
             response = requests.post(f"{self.CHATROOM_SERVER}/emit_message_to_room", json= post_json)
             return response.json()

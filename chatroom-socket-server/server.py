@@ -23,13 +23,14 @@ client = Client(f"socket-server-{socket.gethostname()}", "mosquitto", "message/#
 def default_on_message(client, userdata, message):
     try:
         msg = message.payload.decode('utf-8')
+        topic = message.topic
         print(f"Receving {msg}...", flush= True)
         message_dict = json.loads(msg)
     except Exception as error:
         print(error, flush= True)
         return
     
-    queue.push(message_dict)
+    queue.push({**message_dict, "socket_event": topic})
 
 client.set_on_message_callback(default_on_message)
 
