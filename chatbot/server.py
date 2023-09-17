@@ -16,8 +16,6 @@ from utils import (
 from response_database_manager import response_db_manager
 from qdrant_vector_store import qdrant_vector_store
 from embedding_service import embedding_service, Embedding
-import json
-from paho.mqtt.publish import single
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import uuid
 import openai

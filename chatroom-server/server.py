@@ -54,8 +54,7 @@ def join_room():
         "is_join": True
     }
 
-    payload = {"data": notification}
-    emit_socket_event(socket_event, payload)
+    emit_socket_event(socket_event, notification)
 
     return "ok"
 
@@ -76,8 +75,7 @@ def leave_room():
             "user_id": user_id,
             "is_join": False
     }
-    payload = {"data": notification}
-    emit_socket_event(socket_event, payload)
+    emit_socket_event(socket_event, notification)
     
     return "ok"
 
@@ -157,7 +155,7 @@ def emit_message_to_room():
     room = room_manager.get_room_by_id(room_id)
     socket_event = room.get_socket_event(message_type)
 
-    payload = {"data": {"user_id": user_id, "content": content, "user_name": user_name}}
+    payload = {"user_id": user_id, "content": content, "user_name": user_name}
     emit_socket_event(socket_event, payload)
 
 
