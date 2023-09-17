@@ -257,7 +257,9 @@ def release_room_lock():
 @handle_server_errors
 @login_required
 def list_room():
-    return room_manager.get_all_rooms_info()
+    request_json = request.get_json()
+    filter_room_name = request_json.get("filter_room_name", "")
+    return room_manager.get_all_rooms_info(filter_room_name= filter_room_name)
 
 
 

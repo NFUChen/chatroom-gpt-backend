@@ -78,5 +78,9 @@ class RoomManager:
     def is_room_locked(self, room_id: str) -> bool:
         return self.get_room_by_id(room_id).is_locked
 
-    def get_all_rooms_info(self) -> list[dict[str, str]]:
-        return [room.to_dict() for room in self.rooms_dict.values()]
+    def get_all_rooms_info(self, filter_room_name: str) -> list[dict[str, str]]:
+        return [
+            room.to_dict() 
+            for room in self.rooms_dict.values() 
+            if filter_room_name in room.room_name
+        ]
