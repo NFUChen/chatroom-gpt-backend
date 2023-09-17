@@ -46,9 +46,29 @@ parser.add_argument("--google_location", "-gl", help="Google location", default=
 
 args = parser.parse_args()
 
+
+token_lookup = {
+    "gpt-3.5-turbo": 4097,
+    "gpt-4": 8192,
+    "gpt-3.5-turbo-16k": 16385,
+    "gpt-4-32k": 32768,
+}
+
+
+all_models = ["gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo-16k", "gpt-4-32k"]
+
+prompt = f'''
+Please answer the question: 
+{args.prompt}
+Please follow the following guidelines:
+    - If searched content is too lengthy (greater than 10000 words), you should immediately stop due to token limit you have.
+    - Try your best to summarize your observation (not with a tool but with your reasoning ability) under 200 words due to token limit you have.
+
+'''
+
 with get_openai_callback() as cb:
     llm = ChatOpenAI(temperature=0, openai_api_key= args.openai_api_key,
-                     model_name='gpt-3.5-turbo')
+                    model_name="gpt-3.5-turbo-16k")
     search = GoogleSerperAPIWrapper(serper_api_key=args.serper_api_key, gl= args.google_location)
     wiki_search = WikipediaAPIWrapper()
     tools = [
@@ -75,7 +95,8 @@ with get_openai_callback() as cb:
         verbose= True, 
         return_intermediate_steps=True, 
         max_iteration= 5,
-        handle_parsing_errors=True
+        early_stopping_method='generate',
+        handle_parsing_errors=True,
     )
-    result = self_ask_with_search({"input":args.prompt})
+    result = self_ask_with_search({"input":prompt})
     print(cb)
