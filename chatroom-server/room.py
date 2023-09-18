@@ -1,7 +1,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from enum import Enum
-from chat_message import MessageType, ChatMessage
+from chat_message import ChatMessage
 import uuid
 from chat_room_database_manager import chat_room_db_manager
 
@@ -43,10 +43,7 @@ class Room:
     def unlock_room(self) -> None:
         self.is_locked = False
 
-    def get_socket_event(self, message_type: str, base: str | None = None) -> str:
-        if base is not None:
-            return f"{base}/{message_type}/{self.room_id}"
-
+    def get_socket_event(self, message_type: str) -> str:
         return f"{message_type}/{self.room_id}"
 
     def set_messages(self, messages: dict[str, list[ChatMessage]]) -> None:
@@ -102,10 +99,10 @@ class Room:
             dict_copy.pop("user_ids")
 
         dict_copy["socket_events"] = {
-            "regular": self.get_socket_event("regular", base= "message"), 
-            "ai": self.get_socket_event("ai", base= "message"),
-            "notification": self.get_socket_event("notification", base= "message"),
-            "thinking": self.get_socket_event("thinking", base= "message"),
+            "regular": self.get_socket_event("regular"), 
+            "ai": self.get_socket_event("ai"),
+            "notification": self.get_socket_event("notification"),
+            "thinking": self.get_socket_event("thinking"),
         }
 
         dict_copy["num_of_people"] = len(self.user_ids)

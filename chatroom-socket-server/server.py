@@ -19,7 +19,7 @@ def index():
     return f"Welcome to chatroom central socket server [{host}]"
 
 
-client = Client(f"socket-server-{socket.gethostname()}", "mosquitto", "message/#", 1)
+client = Client(f"socket-server-{socket.gethostname()}", "mosquitto", "#", 1)
 def default_on_message(client, userdata, message):
     try:
         msg = message.payload.decode('utf-8')

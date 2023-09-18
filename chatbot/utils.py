@@ -198,8 +198,7 @@ def query_all_embeddings() -> list[dict[str, str | list[float]]]:
     return embeddings
 
 def emit_socket_event(socket_event: str, data: Any) -> None:
-    topic = f"message/{socket_event}"
     payload = {
             "data": data
     }
-    single(topic, json.dumps(payload), 1, hostname= "mosquitto")
+    single(socket_event, json.dumps(payload), 1, hostname= "mosquitto")
