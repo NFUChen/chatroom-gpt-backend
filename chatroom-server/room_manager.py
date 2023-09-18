@@ -1,4 +1,4 @@
-from room_database_manager import room_db_manager
+from chat_room_database_manager import chat_room_db_manager
 from room import Room
 class RoomManager:
     def __init__(self, rooms: list[Room] = []) -> None:
@@ -48,7 +48,7 @@ class RoomManager:
     def add_room(self, room: Room) -> None:
 
         # add room to db via publisher
-        room_db_manager.add_room(room)
+        chat_room_db_manager.add_room(room)
         self.rooms_dict[room.room_id] = room
     
     def pop_room(self, room_id: str) -> Room:
@@ -56,7 +56,7 @@ class RoomManager:
             raise ValueError(f"Room {room_id} not found")
         # delete room to db via publisher
         target_room = self.rooms_dict[room_id]
-        room_db_manager.delete_room(target_room)
+        chat_room_db_manager.delete_room(target_room)
         
         # clear who have joined this deleted room
         self.user_location_dict = {

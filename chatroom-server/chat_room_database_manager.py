@@ -151,4 +151,4 @@ class ChatRoomDataBaseManager:
         ).json()["data"]
 
 
-room_db_manager = ChatRoomDataBaseManager()
+chat_room_db_manager = ChatRoomDataBaseManager()

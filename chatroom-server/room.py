@@ -3,7 +3,7 @@ from copy import deepcopy
 from enum import Enum
 from chat_message import MessageType, ChatMessage
 import uuid
-from room_database_manager import room_db_manager
+from chat_room_database_manager import chat_room_db_manager
 
 class RoomType(Enum):
     PUBLIC = "public"
@@ -77,7 +77,7 @@ class Room:
         if len(current_messages) >= self.MAX_MESSAGE_LENGTH:
             current_messages.pop(0)
         # add messages to db via publisher
-        room_db_manager.add_message(message)
+        chat_room_db_manager.add_message(message)
 
         current_messages.append(message)
     

@@ -1,28 +1,30 @@
 from flask import Flask, request
 from flask_cors import CORS
 
-from chat_room_utils import room_manager
+from chat_room_utils import (
+    init_room_manager, 
+    init_openai_api_key_loadbalancer,
+    init_personal_room_list_service,
+)
 from utils import (
     handle_server_errors, 
     login_required, 
-    query_api_keys,
     emit_socket_event
 )
 from room import Room
 from chat_message import ChatMessage
 import logging
-from api_key_load_balancer import ApiKeyLoadBalancer
 import requests
 import threading
 
 logging.basicConfig(level=logging.DEBUG)
-keys = query_api_keys()
-api_key_load_balancer = ApiKeyLoadBalancer(keys)
+room_manager = init_room_manager()
+api_key_load_balancer = init_openai_api_key_loadbalancer()
+personal_room_list_service =  init_personal_room_list_service()
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 CHATBOT_SERVER = "http://chatbot:5000"
-
 
 @app.route("/")
 def index():
@@ -30,9 +32,8 @@ def index():
 
 @app.route("/update_api_keys")
 def update_api_keys():
-    new_keys = query_api_keys()
     global api_key_load_balancer
-    api_key_load_balancer = ApiKeyLoadBalancer(new_keys)
+    api_key_load_balancer = init_openai_api_key_loadbalancer()
     return "ok"
 
 @app.route("/join_room", methods = ["POST"])
@@ -261,7 +262,14 @@ def list_room():
     filter_room_name = request_json.get("filter_room_name", "")
     return room_manager.get_all_rooms_info(filter_room_name= filter_room_name)
 
+@app.route("/list_personal_room_list", methods = ["POST"])
+@handle_server_errors
+@login_required
+def list_personal_room_list():
+    request_json = request.get_json()
+    user_id = request_json["user"]["user_id"]
 
+    return personal_room_list_service.get_room_list_by_user_id(user_id)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug= False)
