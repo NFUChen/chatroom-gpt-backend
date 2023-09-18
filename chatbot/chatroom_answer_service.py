@@ -43,8 +43,7 @@ class ChatRoomAnswerService:
             relevant_docs.append(payload)
             relevant_docs.extend(contexts)
 
-        all_log = "\n".join(relevant_docs)
-        all_log = self.__summarize_if_text_exceed_context_window_limit(all_log, 8000)
+        all_log = self.__summarize_if_text_exceed_context_window_limit(relevant_docs, 8000)
 
         system_prompt = create_assistant_base_pompt() + create_vector_store_context_prompt(all_log)
         bot = self.__bot_answer(system_prompt)
@@ -71,7 +70,7 @@ class ChatRoomAnswerService:
         query_prompt = create_web_query_prompt(self.prompt, self.messages)
         for log in executor.execute(query_prompt, plugin_param):
             all_log = "\n".join(log)
-            self.__emit_message_to_room(self.ai_id ,self.ai_name,all_log)
+            emit_socket_event(f"thinking/{self.room_id}", all_log)
         all_log = executor.get_logs()
         self.__emit_message_to_room(self.user_id,self.user_name, self.prompt)
         
@@ -88,7 +87,7 @@ class ChatRoomAnswerService:
             "sorces": all_log
         }
     
-    def __summarize_if_text_exceed_context_window_limit(self, text: str, context_window_limit: int = 8000) -> str:
+    def __summarize_if_text_exceed_context_window_limit(self, text: str | list[dict[str, str]], context_window_limit: int = 8000) -> str:
         if len(text) < context_window_limit:
             return text
         print(f"Content truncated warning: logs exceed 8000 words: getting {len(text)}, summarized into 4000 words article", flush= True)

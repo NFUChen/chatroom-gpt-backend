@@ -43,7 +43,7 @@ class Room:
     def unlock_room(self) -> None:
         self.is_locked = False
 
-    def get_socket_event(self, message_type: MessageType) -> str:
+    def get_socket_event(self, message_type: str) -> str:
         return f"{message_type}/{self.room_id}"
 
     def set_messages(self, messages: dict[str, list[ChatMessage]]) -> None:
@@ -101,7 +101,8 @@ class Room:
         dict_copy["socket_events"] = {
             "regular": self.get_socket_event("regular"), 
             "ai": self.get_socket_event("ai"),
-            "notification": self.get_socket_event("notification")
+            "notification": self.get_socket_event("notification"),
+            "thinking": self.get_socket_event("thinking")
         }
         dict_copy["num_of_people"] = len(self.user_ids)
 
