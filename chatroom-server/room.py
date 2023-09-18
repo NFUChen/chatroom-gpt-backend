@@ -44,7 +44,7 @@ class Room:
         self.is_locked = False
 
     def get_socket_event(self, message_type: MessageType) -> str:
-        return f"message/{message_type}/{self.room_id}"
+        return f"{message_type}/{self.room_id}"
 
     def set_messages(self, messages: dict[str, list[ChatMessage]]) -> None:
         self.messages = messages
