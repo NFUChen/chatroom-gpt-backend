@@ -68,7 +68,7 @@ Please follow the following guidelines:
 
 with get_openai_callback() as cb:
     llm = ChatOpenAI(temperature=0, openai_api_key= args.openai_api_key,
-                    model_name="gpt-3.5-turbo-16k")
+                    model_name="gpt-3.5-turbo")
     search = GoogleSerperAPIWrapper(serper_api_key=args.serper_api_key, gl= args.google_location)
     wiki_search = WikipediaAPIWrapper()
     tools = [
