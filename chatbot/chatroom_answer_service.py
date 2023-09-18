@@ -135,11 +135,12 @@ class ChatRoomAnswerService:
             "content": content,
             "is_message_persist": is_message_persist
         }
-        msg = {"user_id": user_id, "user_name": user_name,"content": content, "is_message_persist": is_message_persist}
-        emit_socket_event(f"{message_type}/{self.room_id}", msg)
         if is_message_persist: # only post if true
             response = requests.post(f"{self.CHATROOM_SERVER}/emit_message_to_room", json= post_json)
             return response.json()
+        
+        msg = {"user_id": user_id, "user_name": user_name,"content": content, "is_message_persist": is_message_persist}
+        emit_socket_event(f"{message_type}/{self.room_id}", msg)
     
     def __validate_prompt(self, prompt: str, size_limit: int = 15000) -> None:
         prompt_length = len(prompt)

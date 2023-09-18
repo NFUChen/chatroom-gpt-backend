@@ -148,6 +148,7 @@ def emit_message_to_room():
     is_memo = request_json.get("is_memo", False)
     is_ai = request_json.get("is_ai", False)
     content = request_json["content"] #required
+    is_message_persist = request_json.get("is_message_persist")
     
     room_id = (
         request_json["room_id"] if is_ai 
@@ -156,11 +157,13 @@ def emit_message_to_room():
     room = room_manager.get_room_by_id(room_id)
     socket_event = room.get_socket_event(message_type)
 
-    payload = {"user_id": user_id, "content": content, "user_name": user_name}
+    payload = {
+        "user_id": user_id, 
+        "content": content, 
+        "user_name": user_name, 
+        "is_message_persist": is_message_persist
+    }
     emit_socket_event(socket_event, payload)
-
-
-    is_message_persist = request_json.get("is_message_persist")
     chat_message = ChatMessage.create_chat_message(
         message_type, user_id, user_name ,room_id, content,is_memo
     )
