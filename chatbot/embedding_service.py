@@ -31,7 +31,7 @@ class EmbeddingService:
             vector= text_vector
         )
     
-    def get_adjancent_embeddings(self, document_id: str,chunk_id: str) -> tuple[Embedding]:
+    def get_adjancent_embeddings(self, document_id: str,chunk_id: str) -> tuple[dict[str, str]]:
         '''
         Target chunk is not included
         '''

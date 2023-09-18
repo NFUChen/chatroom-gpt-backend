@@ -31,8 +31,23 @@ class ChatRoomAnswerService:
         self.ai_id = self.ai_user_dict["user_id"]
         self.ai_name = self.ai_user_dict["user_name"]
     def ask_vector_store(self) -> str:
-        
-        query = self.messages_with_prompt[-1]["content"]
+        query = f"{self.messages_with_prompt[-3]['content']}\n{self.messages_with_prompt[-1]['content']}"
+        print(f"Querying vector store with query: {query}", flush= True)
+        all_relevant_docs = self.__get_relevant_docs(query)
+        all_logs = "\n".join([f"{str(doc)}" for doc in all_relevant_docs])
+        all_logs = self.__summarize_if_text_exceed_context_window_limit(all_logs, 8000)
+        system_prompt = create_assistant_base_pompt() + create_vector_store_context_prompt(all_logs)
+        bot = self.__bot_answer(system_prompt)
+        return  {
+            **bot.bot_response.to_dict(),
+            "user_id": self.user_id,
+            "room_id": self.room_id,
+            "sources": list(set([
+                doc.get("document_id") for doc in all_relevant_docs
+            ]))
+        }
+    
+    def __get_relevant_docs(self, query: str) -> list[dict[str, str]]:
         embedding = embedding_service.get_embedding(query, None, None)
         query_results = qdrant_vector_store.search_text_chunks(self.room_id, embedding, threshold= 0.8)
         relevant_docs = []
@@ -42,19 +57,8 @@ class ChatRoomAnswerService:
             contexts = embedding_service.get_adjancent_embeddings(document_id, chunk_id)
             relevant_docs.append(payload)
             relevant_docs.extend(contexts)
+        return relevant_docs
 
-        all_log = self.__summarize_if_text_exceed_context_window_limit(relevant_docs, 8000)
-
-        system_prompt = create_assistant_base_pompt() + create_vector_store_context_prompt(all_log)
-        bot = self.__bot_answer(system_prompt)
-        return  {
-            **bot.bot_response.to_dict(),
-            "user_id": self.user_id,
-            "room_id": self.room_id,
-            "sources": list(set([
-                result["document_id"] for result in query_results
-            ]))
-        }
     
     def ask_web(self) -> str:
         '''
@@ -87,10 +91,11 @@ class ChatRoomAnswerService:
             "sorces": all_log
         }
     
-    def __summarize_if_text_exceed_context_window_limit(self, text: str | list[dict[str, str]], context_window_limit: int = 8000) -> str:
+    def __summarize_if_text_exceed_context_window_limit(self, text: str, context_window_limit: int = 8000) -> str:
         if len(text) < context_window_limit:
+            print(f"Content length is less than {context_window_limit} words, getting {len(text)}, no need to summarize", flush= True)
             return text
-        print(f"Content truncated warning: logs exceed 8000 words: getting {len(text)}, summarized into 4000 words article", flush= True)
+        print(f"Content truncated warning: logs exceed {context_window_limit} words: getting {len(text)}, summarized into 4000 words article", flush= True)
         summarizer = MapReduceTextSummarizer(openai_api_key= openai.api_key, question= self.prompt, text= text)
         return summarizer.summarize()
     

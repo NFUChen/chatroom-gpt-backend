@@ -43,16 +43,12 @@ Please strictly adhere to the following guidelines:
 Execute this task while ensuring that your responses are accurate and helpful in chat context scenarios.\n
 """
 
-def create_vector_store_context_prompt(query_results: Any) -> str:
-    query_result_string = ""
-    for doc in query_results:
-        query_result_string += f"{doc}\n"
-
+def create_vector_store_context_prompt(query_results: str) -> str:
     return f'''
 You are provided with the following contextual information (query result from the vector database and current timestamp) for answering the question:
 Current timestamp: {get_current_datetime()}
 Query result:
-{query_result_string}
+{query_results}
 '''
 
 def create_web_context_prompt(web_content: str) -> str:
