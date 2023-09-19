@@ -37,6 +37,7 @@ class ChatRoomAnswerService:
         all_logs = "\n".join([f"{str(doc)}" for doc in all_relevant_docs])
         all_logs = self.__summarize_if_text_exceed_context_window_limit(all_logs, 8000)
         system_prompt = create_assistant_base_pompt() + create_vector_store_context_prompt(all_logs)
+        self.__emit_message_to_room(self.user_id,self.user_name, self.prompt)
         bot = self.__bot_answer(system_prompt)
         return  {
             **bot.bot_response.to_dict(),
@@ -71,12 +72,13 @@ class ChatRoomAnswerService:
             "-s": "090d6a2fac0a459e894a5b1aa17674b0def6ff34",
         }
         
+        self.__emit_message_to_room(self.user_id,self.user_name, self.prompt)
+
         query_prompt = create_web_query_prompt(self.prompt, self.messages)
         for log in executor.execute(query_prompt, plugin_param):
             all_log = "\n".join(log)
             emit_socket_event(f"thinking/{self.room_id}", all_log)
         all_log = executor.get_logs()
-        self.__emit_message_to_room(self.user_id,self.user_name, self.prompt)
         
         all_log = self.__summarize_if_text_exceed_context_window_limit(all_log, 8000)
             
@@ -101,7 +103,7 @@ class ChatRoomAnswerService:
     
     def __bot_answer(self, system_prompt: str) -> ChatBot:
         print(system_prompt, flush= True)
-        self.__emit_message_to_room(self.user_id,self.user_name, self.prompt)
+        
         bot = ChatBot(system_prompt, self.messages_with_prompt)
         for current_message in bot.answer():
             self.__emit_message_to_room(self.ai_id ,self.ai_name,current_message)
