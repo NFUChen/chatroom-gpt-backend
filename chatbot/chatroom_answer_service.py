@@ -108,13 +108,13 @@ class ChatRoomAnswerService:
         for current_message in bot.answer():
             self.__emit_message_to_room(self.ai_id ,self.ai_name,current_message)
         
-        self.__emit_message_to_room(self.user_id,self.user_name, self.prompt, is_message_persist= True)
+        self.__emit_message_to_room(self.user_id,self.user_name, self.prompt, is_message_persist= True, is_emit= False)
         time.sleep(1)
         self.__emit_message_to_room(self.ai_id ,self.ai_name,bot.current_message, is_message_persist= True)
         print(flush= True)
         return bot
 
-    def __emit_message_to_room(self, user_id: str, user_name: str,content:str, is_message_persist: bool = False) -> requests.Response | None:
+    def __emit_message_to_room(self, user_id: str, user_name: str,content:str, is_message_persist: bool = False, is_emit: bool = True) -> requests.Response | None:
         '''
         {
             "message_type": "regular" | "ai"
@@ -133,9 +133,10 @@ class ChatRoomAnswerService:
                 "user_id": user_id,
                 "user_name": user_name,
             },
-            "is_ai": True,
             "content": content,
-            "is_message_persist": is_message_persist
+            "is_message_persist": is_message_persist,
+            "is_ai": True,
+            "is_emit": is_emit,
         }
         if is_message_persist: # only post if true
             response = requests.post(f"{self.CHATROOM_SERVER}/emit_message_to_room", json= post_json)
