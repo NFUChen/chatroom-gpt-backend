@@ -15,6 +15,16 @@ class SessionStore:
         self.redis_client.setex(sid, self.expired_time, user_json)
         return sid
     
+    def remove_duplicated_user(self, user_dict: dict[str, str]) -> None:
+        sids = self.redis_client.keys('*')
+        for sid in sids:
+            user_dict_byte = self.redis_client.get(sid)
+            current_user_dict = json.loads(user_dict_byte.decode())
+            if current_user_dict == user_dict:
+                self.redis_client.delete(sid)
+                print(f"Remove duplicated user login: {current_user_dict}\n[{sid}]", flush= True)
+                return
+    
     def remove_sid_from_session(self, sid: str) -> None:
         self.redis_client.delete(sid)
     
