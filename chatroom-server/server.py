@@ -205,7 +205,7 @@ def cmd():
         "user_name": user_name
     }
     
-    messages = [message.to_dict() for message in room.get_ai_messages(3)]
+    messages = [message.to_dict() for message in room.get_ai_messages(4)]
     
     cmd_lookup = [
         ("answer", "messages", messages), # operation_name, post_json_key, post_json_value

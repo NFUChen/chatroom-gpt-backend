@@ -31,9 +31,13 @@ class ChatRoomAnswerService:
         self.ai_id = self.ai_user_dict["user_id"]
         self.ai_name = self.ai_user_dict["user_name"]
     def ask_vector_store(self) -> str:
-        query = f"{self.messages_with_prompt[-3]['content']}\n{self.messages_with_prompt[-1]['content']}"
-        print(f"Querying vector store with query: {query}", flush= True)
-        all_relevant_docs = self.__get_relevant_docs(query)
+        querys = [
+            message["content"] 
+            for message in self.messages_with_prompt 
+            if message["role"] == "user"
+        ]
+        print(f"Querying vector store with query: {querys}", flush= True)
+        all_relevant_docs = self.__get_relevant_docs("\n".join(querys))
         all_logs = "\n".join([f"{str(doc)}" for doc in all_relevant_docs])
         all_logs = self.__summarize_if_text_exceed_context_window_limit(all_logs, 8000)
         system_prompt = create_assistant_base_pompt() + create_vector_store_context_prompt(all_logs)
