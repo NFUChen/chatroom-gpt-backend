@@ -24,7 +24,7 @@ class LoginManager:
 
         if not Authenticator.verify_password(password, user.password):
             raise ValueError(LoginError.WRONG_PASSWORD.value)
-        session_store.remove_duplicated_user(user_dict)
+        # session_store.remove_duplicated_user(user_dict)
         sid = session_store.add_user_in_session(user_dict)
         return {
                 "user": user_dict,
