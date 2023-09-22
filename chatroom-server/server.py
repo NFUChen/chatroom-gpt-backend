@@ -196,7 +196,7 @@ def cmd():
     full_id = f"{user_id}-{user_name}"
     room_id = room_manager.get_user_location(full_id)
     room = room_manager.get_room_by_id(room_id)
-    if room_manager.is_room_locked(room_id):
+    if room.is_locked:
         raise ValueError(f"The AI assistant is currently answering the question, please waiting it to unlock the room {room_id}")
     
     post_json = {
@@ -227,14 +227,16 @@ def cmd():
         try:
             if operation == "answer":
                 print(f"Lock the room: {room_id}", flush= True)
-                room_manager.lock_room(room_id)
-
+                prompt_message = ChatMessage.create_chat_message("ai", user_id, user_name, room_id, request_json.get("prompt"), False)
+                room.add_cached_prompt_message(prompt_message)
+                room.lock_room()
             resp = requests.post(f"{CHATBOT_SERVER}/{operation}", json= post_json)
             print(f"Posting json: {post_json}")
             print(resp.json(), flush= True)
         finally:
             if operation == "answer":
-                room_manager.unlock_room(room_id)
+                room.unlock_room()
+                room.remove_cacached_message()
                 print(f"Unlock the room: {room_id}", flush= True)
     
     threading.Thread(target= wrapper).start()
@@ -248,7 +250,7 @@ def cmd():
 def acquire_room_lock():
     request_json = request.get_json()
     room_id = request_json["room_id"]
-    room_manager.lock_room(room_id)
+    room_manager.get_room_by_id(room_id).lock_room()
 
     return f"Room: {room_id} locked"
 
@@ -256,7 +258,7 @@ def acquire_room_lock():
 def release_room_lock():
     request_json = request.get_json()
     room_id = request_json["room_id"]
-    room_manager.lock_room(room_id)
+    room_manager.get_room_by_id(room_id).unlock_room()
 
     return f"Room: {room_id} unlocked"
 

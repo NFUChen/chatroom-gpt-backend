@@ -30,12 +30,19 @@ class Room:
         self.messages = self._get_empty_messages()
         self.is_deleted = True if is_deleted else False
         self.is_locked = False
+        self.cached_prompt_message = None
 
     def _get_empty_messages(self) -> dict[str, list[ChatMessage]]:
         return {
             "regular": [],
             "ai": [],
         }
+    
+    def add_cached_prompt_message(self, message: ChatMessage) -> None:
+        self.cached_prompt_message = message
+    
+    def remove_cacached_message(self,) -> None:
+        self.cached_prompt_message = None
     
     def lock_room(self) -> None:
         self.is_locked = True

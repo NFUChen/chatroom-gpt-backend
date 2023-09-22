@@ -67,17 +67,6 @@ class RoomManager:
         
         return self.rooms_dict.pop(room_id)
     
-    def lock_room(self, room_id: str) -> None:
-        self.get_room_by_id(room_id).lock_room()
-        
-        self.rooms_dict[room_id].lock_room()
-
-    def unlock_room(self, room_id: str) -> None:
-        self.get_room_by_id(room_id).unlock_room()
-
-    def is_room_locked(self, room_id: str) -> bool:
-        return self.get_room_by_id(room_id).is_locked
-
     def get_all_rooms_info(self, filter_room_name: str) -> list[dict[str, str]]:
         return [
             room.to_dict() 
