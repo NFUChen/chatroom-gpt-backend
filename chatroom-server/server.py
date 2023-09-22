@@ -279,6 +279,18 @@ def list_personal_room_list():
 
     return personal_room_list_service.get_room_list_by_user_id(user_id)
 
+@app.route("/list_room_members", methods = ["POST"])
+@handle_server_errors
+@login_required
+def list_room_members():
+    request_json = request.get_json()
+    user_id = request_json["user"]["user_id"]
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+    room_id = room_manager.get_user_location(full_id)    
+    room = room_manager.get_room_by_id(room_id)
+    return room.get_room_members(self_user_id= user_id)
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug= False)
     

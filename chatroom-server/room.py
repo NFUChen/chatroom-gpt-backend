@@ -32,6 +32,17 @@ class Room:
         self.is_locked = False
         self.cached_prompt_message = None
 
+    def get_room_members(self, self_user_id: int) -> list[dict[str, int | str]]:
+        members = []
+        for user in self.user_ids:
+            user_id, user_name = user.split("-")
+            members.append({
+                "user_id": int(user_id),
+                "user_name": user_name,
+                "is_self": True if int(user_id) == self_user_id else False
+            })
+        return members
+
     def _get_empty_messages(self) -> dict[str, list[ChatMessage]]:
         return {
             "regular": [],
