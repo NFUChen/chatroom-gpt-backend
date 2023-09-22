@@ -146,6 +146,10 @@ def emit_message_to_room():
     is_memo = request_json.get("is_memo", False)
     is_ai = request_json.get("is_ai", False)
     content = request_json["content"] #required
+
+    if len(content) == 0:
+        raise ValueError("Message content cannot be empty")
+
     is_message_persist = request_json.get("is_message_persist")
     is_emit = request_json.get("is_emit", True)
     

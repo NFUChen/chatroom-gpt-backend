@@ -93,6 +93,8 @@ def memo():
     openai.api_key = request_json["api_key"]
     room_id = request_json["room_id"]
     prompt = request_json["prompt"]
+    if len(prompt) == 0:
+        raise ValueError("Memo prompt cannot be empty")
 
     chunks = [
         chunk for chunk in default_text_spliter.split_text(prompt)
