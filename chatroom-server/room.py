@@ -99,7 +99,7 @@ class Room:
 
         current_messages.append(message)
     
-    def to_dict(self, is_message_included: bool = False, is_user_ids_included: bool = False) -> dict[str, str]:
+    def to_dict(self, is_message_included: bool = False) -> dict[str, str]:
         dict_copy = deepcopy(self.__dict__)
         if is_message_included:
             json_messages = {}
@@ -112,9 +112,7 @@ class Room:
             dict_copy["messages"] = json_messages
         else:
             dict_copy.pop("messages")
-
-        if not is_user_ids_included:
-            dict_copy.pop("user_ids")
+        
 
         dict_copy["socket_events"] = {
             "regular": self.get_socket_event("regular"), 
@@ -124,6 +122,6 @@ class Room:
         }
 
         dict_copy["num_of_people"] = len(self.user_ids)
-
+        dict_copy.pop("user_ids")
         return dict_copy
         

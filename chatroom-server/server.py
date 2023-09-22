@@ -119,12 +119,10 @@ def get_room_info():
     request_json = request.get_json()
     room_id = request_json["room_id"]
     is_message_included = request_json.get("is_message_included", False)
-    is_user_ids_included = request_json.get("is_user_ids_included", False)
 
     room = room_manager.get_room_by_id(room_id)
     return room.to_dict(
-            is_message_included= is_message_included, 
-            is_user_ids_included= is_user_ids_included
+            is_message_included= is_message_included
             )
 
 @app.route("/emit_message_to_room", methods=["POST"])
