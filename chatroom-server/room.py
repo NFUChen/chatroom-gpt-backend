@@ -31,6 +31,10 @@ class Room:
         self.is_deleted = True if is_deleted else False
         self.is_locked = False
         self.cached_prompt_message = None
+        
+    @property
+    def number_of_people(self) -> int:
+        return len(self.user_ids)
 
     def get_room_members(self, self_user_id: int) -> list[dict[str, int | str]]:
         members = []
@@ -121,7 +125,7 @@ class Room:
             "thinking": self.get_socket_event("thinking"),
         }
 
-        dict_copy["num_of_people"] = len(self.user_ids)
+        dict_copy["num_of_people"] = self.number_of_people
         dict_copy.pop("user_ids")
         return dict_copy
         

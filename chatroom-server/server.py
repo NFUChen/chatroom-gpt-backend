@@ -80,6 +80,44 @@ def leave_room():
     
     return "ok"
 
+@app.route("/auto_switch_room", methods = ["POST"])
+@handle_server_errors
+@login_required
+def auto_switch_room():
+    request_json = request.get_json()
+    user_id = request_json["user"]["user_id"]
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+    target_room_id = request_json["room_id"]
+    target_room = room_manager.get_room_by_id(target_room_id)
+    target_room_info = target_room.to_dict(is_message_included= True)
+
+    notification = {
+            "user_name": user_name,
+            "user_id": user_id,
+    }
+    
+    current_room_id =  room_manager.get_user_location(full_id, raise_if_not_found= False)
+    
+    if current_room_id == target_room_id:
+        raise ValueError(f"User [{full_id}] is already in room {target_room_id}")
+    
+    if current_room_id is None:
+        room_manager.user_join_room(full_id, target_room_id)
+        notification["is_join"] = True
+        emit_socket_event(target_room.get_socket_event("notification"), notification)
+        return target_room_info
+    
+    if current_room_id != target_room_id:
+        left_room = room_manager.user_leave_room(full_id)
+        notification["is_join"] = False
+        emit_socket_event(left_room.get_socket_event("notification"), notification)
+        room_manager.user_join_room(full_id, target_room_id)
+        notification["is_join"] = True
+        emit_socket_event(target_room.get_socket_event("notification"), notification)
+        return target_room_info
+
+
 @app.route("/user_location", methods = ["POST"])
 @handle_server_errors
 @login_required
