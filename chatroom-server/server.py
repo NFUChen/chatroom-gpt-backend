@@ -90,7 +90,6 @@ def auto_switch_room():
     full_id = f"{user_id}-{user_name}"
     target_room_id = request_json["room_id"]
     target_room = room_manager.get_room_by_id(target_room_id)
-    target_room_info = target_room.to_dict(is_message_included= True)
 
     notification = {
             "user_name": user_name,
@@ -100,13 +99,13 @@ def auto_switch_room():
     current_room_id =  room_manager.get_user_location(full_id, raise_if_not_found= False)
     
     if current_room_id == target_room_id:
-        raise ValueError(f"User [{full_id}] is already in room {target_room_id}")
+        return target_room.to_dict(is_message_included= True)
     
     if current_room_id is None:
         room_manager.user_join_room(full_id, target_room_id)
         notification["is_join"] = True
         emit_socket_event(target_room.get_socket_event("notification"), notification)
-        return target_room_info
+        return target_room.to_dict(is_message_included= True)
     
     if current_room_id != target_room_id:
         left_room = room_manager.user_leave_room(full_id)
@@ -115,7 +114,7 @@ def auto_switch_room():
         room_manager.user_join_room(full_id, target_room_id)
         notification["is_join"] = True
         emit_socket_event(target_room.get_socket_event("notification"), notification)
-        return target_room_info
+        return target_room.to_dict(is_message_included= True)
 
 
 @app.route("/user_location", methods = ["POST"])
@@ -329,7 +328,7 @@ def list_room_members():
     full_id = f"{user_id}-{user_name}"
     room_id = room_manager.get_user_location(full_id)    
     room = room_manager.get_room_by_id(room_id)
-    return room.get_room_members(self_user_id= user_id)
+    return room.get_room_members()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug= False)

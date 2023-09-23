@@ -36,14 +36,13 @@ class Room:
     def number_of_people(self) -> int:
         return len(self.user_ids)
 
-    def get_room_members(self, self_user_id: int) -> list[dict[str, int | str]]:
+    def get_room_members(self) -> list[dict[str, int | str]]:
         members = []
         for user in self.user_ids:
             user_id, user_name = user.split("-")
             members.append({
                 "user_id": int(user_id),
                 "user_name": user_name,
-                "is_self": True if int(user_id) == self_user_id else False
             })
         return members
 
@@ -126,6 +125,7 @@ class Room:
         }
 
         dict_copy["num_of_people"] = self.number_of_people
+        dict_copy["room_members"] = self.get_room_members()
         dict_copy.pop("user_ids")
         return dict_copy
         
