@@ -47,7 +47,8 @@ def insert_message_callback(ch, method, properties, body):
         message_dict["room_id"], 
         message_dict["user_id"], 
         message_dict["content"],
-        datetime.strptime(message_dict["created_at"], datetime_format)
+        datetime.strptime(message_dict["created_at"], datetime_format),
+        message_dict["is_memo"]
     )
     
 def delete_room_callback(ch, method, properties, body):

@@ -49,10 +49,13 @@ class MySqlDataBaseManaer:
     def delete_room(self, room_id: str) -> Any:
         sql = f"UPDATE rooms SET is_deleted = 1 WHERE room_id = {room_id}"
         return self._execute(sql)
-    def insert_message(self, message_id: str, message_type:str, room_id: str, user_id: str, content: str, created_at: datetime):
+    def insert_message(self, message_id: str, message_type:str, room_id: str, user_id: str, content: str, created_at: datetime, is_memo: str):
 
-        sql = "INSERT INTO chat_messages (message_id, message_type, room_id, user_id, content, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
-        return self._execute(sql, (message_id, message_type, room_id, user_id, content, created_at.strftime(self.TIMESTAMP_FORMAT)))
+        sql = "INSERT INTO chat_messages (message_id, message_type, room_id, user_id, content, created_at, is_memo) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        return self._execute(
+            sql, 
+            (message_id, message_type, room_id, user_id, content, created_at.strftime(self.TIMESTAMP_FORMAT), is_memo), 
+        )
     
     def insert_embedding(self, collection_name: str, document_id: str, chunk_id: str, text: str, text_hash: str,updated_at: datetime, vector: list[float]):
         '''

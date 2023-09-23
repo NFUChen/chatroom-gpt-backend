@@ -71,7 +71,8 @@ class ChatRoomDataBaseManager:
                 "room_id": message.room_id,
                 "user_id": message.user_id,
                 "content": message.content,
-                "created_at": message.created_at
+                "created_at": message.created_at,
+                "is_memo": message.is_memo
             }
         }
         return self.__post_to_producer(post_json)
