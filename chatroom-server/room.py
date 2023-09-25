@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 from copy import deepcopy
 from enum import Enum
 from chat_message import ChatMessage
@@ -102,7 +103,7 @@ class Room:
 
         current_messages.append(message)
     
-    def to_dict(self, is_message_included: bool = False) -> dict[str, str]:
+    def to_dict(self, is_message_included: bool = False) -> dict[str, Any]:
         dict_copy = deepcopy(self.__dict__)
         if is_message_included:
             json_messages = {}
@@ -122,6 +123,7 @@ class Room:
             "ai": self.get_socket_event("ai"),
             "notification": self.get_socket_event("notification"),
             "thinking": self.get_socket_event("thinking"),
+            "number_of_people": self.get_socket_event("number_of_people")
         }
 
         dict_copy["num_of_people"] = self.number_of_people

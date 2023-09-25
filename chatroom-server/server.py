@@ -48,15 +48,15 @@ def join_room():
     full_id = f"{user_id}-{user_name}"
 
     joined_room = room_manager.user_join_room(full_id, room_id)
-    socket_event = joined_room.get_socket_event("notification")
     notification = {
         "user_id": user_id,
         "user_name": user_name,
-        "is_join": True
+        "is_join": True,
     }
+    
 
-    emit_socket_event(socket_event, notification)
-
+    emit_socket_event(joined_room.get_socket_event("notification"), notification)
+    emit_socket_event(joined_room.get_socket_event("number_of_people", joined_room.number_of_people))
     return "ok"
 
 @app.route("/leave_room", methods = ["POST"])
@@ -70,13 +70,13 @@ def leave_room():
 
     left_room = room_manager.user_leave_room(full_id)
 
-    socket_event = left_room.get_socket_event("notification")
     notification = {
             "user_name": user_name,
             "user_id": user_id,
             "is_join": False
     }
-    emit_socket_event(socket_event, notification)
+    emit_socket_event(left_room.get_socket_event("notification"), notification)
+    emit_socket_event(left_room.get_socket_event("number_of_people", left_room.number_of_people))
     
     return "ok"
 
@@ -89,7 +89,6 @@ def auto_switch_room():
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
     target_room_id = request_json["room_id"]
-    target_room = room_manager.get_room_by_id(target_room_id)
 
     notification = {
             "user_name": user_name,
@@ -99,22 +98,26 @@ def auto_switch_room():
     current_room_id =  room_manager.get_user_location(full_id, raise_if_not_found= False)
     
     if current_room_id == target_room_id:
+        target_room = room_manager.get_room_by_id(target_room_id)
         return target_room.to_dict(is_message_included= True)
     
     if current_room_id is None:
-        room_manager.user_join_room(full_id, target_room_id)
+        joined_room = room_manager.user_join_room(full_id, target_room_id)
         notification["is_join"] = True
-        emit_socket_event(target_room.get_socket_event("notification"), notification)
-        return target_room.to_dict(is_message_included= True)
+        emit_socket_event(joined_room.get_socket_event("notification"), notification)
+        emit_socket_event(joined_room.get_socket_event("number_of_people", joined_room.number_of_people))
+        return joined_room.to_dict(is_message_included= True)
     
     if current_room_id != target_room_id:
         left_room = room_manager.user_leave_room(full_id)
         notification["is_join"] = False
         emit_socket_event(left_room.get_socket_event("notification"), notification)
-        room_manager.user_join_room(full_id, target_room_id)
+        emit_socket_event(left_room.get_socket_event("number_of_people", left_room.number_of_people))
+        joined_room = room_manager.user_join_room(full_id, target_room_id)
         notification["is_join"] = True
-        emit_socket_event(target_room.get_socket_event("notification"), notification)
-        return target_room.to_dict(is_message_included= True)
+        emit_socket_event(joined_room.get_socket_event("notification"), notification)
+        emit_socket_event(joined_room.get_socket_event("number_of_people", joined_room.number_of_people))
+        return joined_room.to_dict(is_message_included= True)
 
 
 @app.route("/user_location", methods = ["POST"])
