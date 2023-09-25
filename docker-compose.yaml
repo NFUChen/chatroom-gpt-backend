@@ -150,7 +150,13 @@ services:
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
   # frontend:
-  #   image: richli0623/chatroom-frontend:0.10
+  #   image: richli0623/chatroom-front
+  #   environment:
+  #     - PUBLIC_BASE_URL=http://192.168.0.104
+  #     - PUBLIC_DEFAULT_PORT=8080
+  #     - PUBLIC_AUTH_PORT=8080
+  #     - PUBLIC_CHATROOM_PORT=8091
+  #     - PUBLIC_CHATBOT_PORT=8090
   #   restart: always
   #   container_name: chatroom-frontend
   #   ports:
