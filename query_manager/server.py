@@ -16,10 +16,7 @@ def index():
 def query():
     request_json: dict[str, str] = request.get_json()
     query = request_json["query"]
-    query_manager.query(query)
-    return {
-        "data": query_manager.query(query) or []
-    }
+    return query_manager.query(query)
 
 
 if __name__ == "__main__":

@@ -21,16 +21,23 @@ class MySqlQueryManaer:
         except Exception as e:
             print(f"Error while connecting: {e}")
 
-    def query(self, sql: str) -> list[dict[str, Any]]:
+    def query(self, sql: str) -> dict[str, str | list[dict[str, Any]]]:
         try:
             if not self.connection or not self.connection.ping(reconnect=True):
                 self.connect()
             with self.connection.cursor() as cursor:
                 cursor.execute(sql)
                 result = cursor.fetchall()
-            return result
-        except Exception as e:
-            print(f"Error while executing query: {e}")
+            return {
+                "data": result,
+                "error": None
+            }
+        except Exception as error:
+            print(f"Error while executing query: {error}", flush= True)
+            return {
+                "data": [],
+                "error": str(error)
+            }
 
 query_manager = MySqlQueryManaer("mysql", "root", "chatchat-admin", "db")
 
