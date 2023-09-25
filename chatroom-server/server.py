@@ -16,6 +16,7 @@ from chat_message import ChatMessage
 import logging
 import requests
 import threading
+from chat_room_database_manager import chat_room_db_manager
 
 logging.basicConfig(level=logging.DEBUG)
 room_manager = init_room_manager()
@@ -332,6 +333,13 @@ def list_room_members():
     room_id = room_manager.get_user_location(full_id)    
     room = room_manager.get_room_by_id(room_id)
     return room.get_room_members()
+
+@app.route("/history_messages", methods = ["POST"])
+@handle_server_errors
+def history_messages():
+    request_json = request.get_json()
+    message_id = request_json["message_id"]
+    return chat_room_db_manager.query_n_history_messages(message_id, 10)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug= False)

@@ -2,7 +2,7 @@ from chat_message import ChatMessage
 import requests
 from dataclasses import dataclass
 from typing import Any
-
+from cache_service import cache_service
 @dataclass
 class Room:
     room_id: str
@@ -122,7 +122,7 @@ class ChatRoomDataBaseManager:
         ).json()["data"]
 
 
-    def query_chat_messsages(self, n_records: int, room_id: str, message_type: str) -> list[dict[str]]:
+    def query_recent_n_chat_messsages(self, room_id: str, message_type: str, n_records: int) -> list[dict[str]]:
         '''
         message_id VARCHAR(36) PRIMARY KEY NOT NULL,
         message_type VARCHAR(10) CHECK (
@@ -150,6 +150,48 @@ class ChatRoomDataBaseManager:
         return requests.post(
             self.query_api, json= post_json
         ).json()["data"]
+    
+    def query_n_history_messages(self, message_id: str, n_records: int) -> list[dict[str, Any]]:
+        messages = cache_service.get(message_id)
+        if messages is not None:
+            print(f"Getting message_id: {message_id} from cache", flush= True)
+            return messages
+        
+        sql = f"""
+        SELECT * FROM (
+            WITH message_info AS (
+            SELECT
+                room_id,
+                message_type,
+                created_at
+            FROM
+                chat_messages
+            WHERE message_id = '{message_id}'
+            )
+            SELECT
+                *
+            FROM
+                chat_messages
+            WHERE
+                room_id = (SELECT room_id FROM message_info)
+                AND message_type = (SELECT message_type FROM message_info)
+                AND created_at <= (SELECT created_at FROM message_info)
+            ORDER BY created_at DESC
+            LIMIT {n_records}
+        ) as subquery
+        ORDER BY created_at;
+        """
+        post_json = {
+            "query": sql
+        }
+        messages = requests.post(
+            self.query_api, json= post_json
+        ).json()["data"]
+        if len(messages) != 0:
+            print(f"Caching message_id: {message_id}, legnth: {len(messages)}", flush= True)
+            cache_service.cache(message_id, messages)
+        
+        return messages
 
 
 chat_room_db_manager = ChatRoomDataBaseManager()

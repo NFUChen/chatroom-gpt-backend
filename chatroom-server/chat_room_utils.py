@@ -12,10 +12,10 @@ def init_messages(room_id: str, message_length: int) -> dict[str, list[ChatMessa
     }
 
     for message_type in messages_dict.keys():
-        message_dicts = chat_room_db_manager.query_chat_messsages(
-            message_type= message_type, 
+        message_dicts = chat_room_db_manager.query_recent_n_chat_messsages(
             room_id= room_id, 
-            n_records= message_length
+            message_type= message_type, 
+            n_records= message_length,
         )
         messages_dict[message_type] = [
             ChatMessage(**message_dict) for message_dict in message_dicts
