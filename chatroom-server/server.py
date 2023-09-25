@@ -106,7 +106,7 @@ def auto_switch_room():
         joined_room = room_manager.user_join_room(full_id, target_room_id)
         notification["is_join"] = True
         emit_socket_event(joined_room.get_socket_event("notification"), notification)
-        emit_socket_event(joined_room.get_socket_event("number_of_people", joined_room.number_of_people))
+        emit_socket_event(joined_room.get_socket_event("number_of_people"), joined_room.number_of_people)
         return joined_room.to_dict(is_message_included= True)
     
     if current_room_id != target_room_id:
