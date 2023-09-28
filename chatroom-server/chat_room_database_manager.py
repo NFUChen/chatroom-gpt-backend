@@ -188,9 +188,9 @@ class ChatRoomDataBaseManager:
         messages = requests.post(
             self.query_api, json= post_json
         ).json()["data"]
-        if len(messages) != 0:
-            print(f"Caching message_id: {message_id}, legnth: {len(messages)}", flush= True)
-            cache_service.cache(message_id, messages)
+        
+        print(f"Caching message_id: {message_id}, legnth: {len(messages)}", flush= True)
+        cache_service.cache(message_id, messages)
         
         return messages
 
