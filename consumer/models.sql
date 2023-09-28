@@ -19,7 +19,8 @@ CREATE TABLE
 
 CREATE TABLE
     IF NOT EXISTS chat_messages (
-        message_id VARCHAR(36) PRIMARY KEY NOT NULL,
+        message_idx INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
+        message_id VARCHAR(36) NOT NULL,
         message_type VARCHAR(10) CHECK (
             message_type = 'regular'
             OR message_type = 'ai'

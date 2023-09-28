@@ -18,6 +18,7 @@ class ChatMessage:
     created_at: datetime.datetime
     modified_at: datetime.datetime | None = None
     is_memo: bool = False
+    message_idx: int | None = None
 
     def to_dict(self) -> dict[str, str]:
         dict_copy = deepcopy(self.__dict__)

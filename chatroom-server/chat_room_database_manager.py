@@ -124,7 +124,8 @@ class ChatRoomDataBaseManager:
 
     def query_recent_n_chat_messsages(self, room_id: str, message_type: str, n_records: int) -> list[dict[str]]:
         '''
-        message_id VARCHAR(36) PRIMARY KEY NOT NULL,
+        message_idx INT AUTO_INCREMENT PRIMARY KEY,
+        message_id VARCHAR(36) NOT NULL,
         message_type VARCHAR(10) CHECK (
             type = 'regular' OR type = 'ai'
         ) NOT NULL,
@@ -140,9 +141,9 @@ class ChatRoomDataBaseManager:
                 SELECT chat_messages.*, users.user_name FROM chat_messages 
                 LEFT JOIN users on chat_messages.user_id = users.user_id 
                 WHERE room_id = '{room_id}' AND message_type = '{message_type}'
-                ORDER BY created_at DESC LIMIT {n_records}
+                ORDER BY message_idx DESC LIMIT {n_records}
             ) AS subquery
-            ORDER BY created_at ASC;
+            ORDER BY message_idx ASC;
         """
         post_json = {
             "query": sql
@@ -163,7 +164,7 @@ class ChatRoomDataBaseManager:
             SELECT
                 room_id,
                 message_type,
-                created_at
+                message_idx
             FROM
                 chat_messages
             WHERE message_id = '{message_id}'
@@ -175,11 +176,11 @@ class ChatRoomDataBaseManager:
             WHERE
                 room_id = (SELECT room_id FROM message_info)
                 AND message_type = (SELECT message_type FROM message_info)
-                AND created_at < (SELECT created_at FROM message_info)
-            ORDER BY created_at DESC
+                AND message_idx < (SELECT message_idx FROM message_info)
+            ORDER BY message_idx DESC
             LIMIT {n_records}
         ) as subquery
-        ORDER BY created_at;
+        ORDER BY message_idx;
         """
         post_json = {
             "query": sql
