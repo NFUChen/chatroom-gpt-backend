@@ -175,7 +175,7 @@ class ChatRoomDataBaseManager:
             WHERE
                 room_id = (SELECT room_id FROM message_info)
                 AND message_type = (SELECT message_type FROM message_info)
-                AND created_at <= (SELECT created_at FROM message_info)
+                AND created_at < (SELECT created_at FROM message_info)
             ORDER BY created_at DESC
             LIMIT {n_records}
         ) as subquery
