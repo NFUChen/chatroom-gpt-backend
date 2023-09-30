@@ -201,15 +201,18 @@ def emit_message_to_room():
     room = room_manager.get_room_by_id(room_id)
     socket_event = room.get_socket_event(message_type)
 
-    payload = {
-        "user_id": user_id, 
-        "content": content, 
-        "user_name": user_name, 
-        "is_message_persist": is_message_persist
-    }
     chat_message = ChatMessage.create_chat_message(
         message_type, user_id, user_name ,room_id, content,is_memo
     )
+
+    payload = {
+        "user_id": user_id, 
+        "content": content, 
+        "user_name": user_name,
+        "room_id": room_id,
+        "message_id": chat_message.message_id,
+        "is_message_persist": is_message_persist
+    }
     if is_message_persist:
         room.add_message(
             chat_message
