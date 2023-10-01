@@ -1,4 +1,5 @@
 from chat_message import ChatMessage
+from datetime import datetime
 import requests
 from dataclasses import dataclass
 from typing import Any
@@ -90,6 +91,15 @@ class ChatRoomDataBaseManager:
             raise ValueError(f"Producer: {error}")
         return resp_json
     
+    def __convert_gmt_into_utc_date(self, gmt_input_date: str) -> str:
+        gmt_format = '%a, %d %b %Y %H:%M:%S GMT'
+        utc_format = '%Y-%m-%d %H:%M:%S.%f'
+
+        input_datetime = datetime.strptime(gmt_input_date, gmt_format)
+        utc_date = input_datetime.strftime(utc_format)
+
+        return utc_date
+    
     def query_all_rooms(self) -> list[dict[str, str]]:
         sql = f"""
             SELECT * FROM rooms
@@ -148,9 +158,16 @@ class ChatRoomDataBaseManager:
         post_json = {
             "query": sql
         }
-        return requests.post(
+
+        messages = requests.post(
             self.query_api, json= post_json
         ).json()["data"]
+
+        for message in messages:
+            message["created_at"] = self.__convert_gmt_into_utc_date(message["created_at"])
+            message["modified_at"] = self.__convert_gmt_into_utc_date(message["modified_at"])
+
+        return messages
     
     def query_n_history_messages(self, message_id: str, n_records: int) -> list[dict[str, Any]]:
         messages = cache_service.get(message_id)
@@ -188,7 +205,11 @@ class ChatRoomDataBaseManager:
         messages = requests.post(
             self.query_api, json= post_json
         ).json()["data"]
-        
+
+        for message in messages:
+            message["created_at"] = self.__convert_gmt_into_utc_date(message["created_at"])
+            message["modified_at"] = self.__convert_gmt_into_utc_date(message["modified_at"])
+    
         print(f"Caching message_id: {message_id}, legnth: {len(messages)}", flush= True)
         cache_service.cache(message_id, messages)
         
