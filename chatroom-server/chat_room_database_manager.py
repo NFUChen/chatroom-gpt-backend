@@ -176,28 +176,30 @@ class ChatRoomDataBaseManager:
             return messages
         
         sql = f"""
-        SELECT * FROM (
-            WITH message_info AS (
-            SELECT
-                room_id,
-                message_type,
-                message_idx
-            FROM
-                chat_messages
-            WHERE message_id = '{message_id}'
-            )
-            SELECT
-                *
-            FROM
-                chat_messages
-            WHERE
-                room_id = (SELECT room_id FROM message_info)
-                AND message_type = (SELECT message_type FROM message_info)
-                AND message_idx < (SELECT message_idx FROM message_info)
-            ORDER BY message_idx DESC
-            LIMIT {n_records}
-        ) as subquery
-        ORDER BY message_idx;
+        SELECT subquery.*, users.user_name
+            FROM (
+                WITH message_info AS (
+                    SELECT
+                        room_id,
+                        message_type,
+                        message_idx
+                    FROM
+                        chat_messages
+                    WHERE message_id = '{message_id}'
+                )
+                SELECT
+                    *
+                FROM
+                    chat_messages
+                WHERE
+                    room_id = (SELECT room_id FROM message_info)
+                    AND message_type = (SELECT message_type FROM message_info)
+                    AND message_idx < (SELECT message_idx FROM message_info)
+                ORDER BY message_idx DESC
+                LIMIT {n_records}
+            ) AS subquery
+        JOIN users ON subquery.user_id = users.user_id
+        ORDER BY subquery.message_idx;
         """
         post_json = {
             "query": sql
