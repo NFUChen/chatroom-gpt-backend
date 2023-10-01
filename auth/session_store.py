@@ -6,7 +6,7 @@ EXPIRE_TIME =  60 * 60 * 24 * 3
 
 class SessionStore:
     def __init__(self, host: str, port: int) -> None:
-        self.redis_client = redis.Redis(host, port, db=0)
+        self.redis_client = redis.Redis(host, port, db=15)
         self.expired_time = EXPIRE_TIME
 
     def add_user_in_session(self, user_dict: dict[str, str]) -> str:
