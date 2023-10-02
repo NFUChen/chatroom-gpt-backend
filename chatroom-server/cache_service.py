@@ -21,4 +21,4 @@ class CacheService:
             return
         return json.loads(value_byte.decode())
     
-cache_service = CacheService("redis", 6379)
+cache_service = CacheService("redis_cacher", 6379)

@@ -1,13 +1,21 @@
 version: '3.3'
 services:
-  redis:
-    container_name: redis
+  redis_session:
+    container_name: redis_session
+    restart: always
+    image: redis:latest
+    ports:
+      - 6380:6379
+    volumes:
+      - ./volume/redis_session:/data
+  redis_cacher:
+    container_name: redis_cacher
     restart: always
     image: redis:latest
     ports:
       - 6379:6379
     volumes:
-      - ./volume/redis_data:/data
+      - ./volume/redis_cacher:/data
   auth:
     container_name: auth
     restart: always
