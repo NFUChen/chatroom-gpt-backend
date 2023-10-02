@@ -7,7 +7,7 @@ services:
     ports:
       - 6380:6379
     volumes:
-      - ./volume/redis_session:/data
+      - ./volume/redis_session_data:/data
   redis_cacher:
     container_name: redis_cacher
     restart: always
@@ -15,7 +15,7 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - ./volume/redis_cacher:/data
+      - ./volume/redis_cacher_data:/data
   auth:
     container_name: auth
     restart: always
