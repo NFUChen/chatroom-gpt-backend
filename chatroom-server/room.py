@@ -16,16 +16,19 @@ class RoomType(Enum):
 
 class Room:
     MAX_MESSAGE_LENGTH = 50
+    DEFAULT_ROOM_RULE = "Please enter your custom instruction."
     def __init__(self, 
                  room_id: str, 
                  room_name: str, 
                  owner_id: int,
+                 room_rule: str,
                  is_deleted: bool = 0,
                  room_type: str = RoomType.PUBLIC.value
                  ) -> None:
         self.room_id = room_id
         self.room_name = room_name
         self.owner_id = owner_id
+        self.room_rule = room_rule
         self.room_type = room_type
         self.user_ids: list[str] = []
         self.messages = self._get_empty_messages()
@@ -87,9 +90,9 @@ class Room:
         self.user_ids.remove(user_id)
 
     @staticmethod
-    def create_new_room(room_name: str, owner_id: int) -> Room:
+    def create_new_room(room_name: str, owner_id: int, room_rule: str) -> Room:
         room_id = str(uuid.uuid4())
-        return Room(room_id, room_name, owner_id)
+        return Room(room_id, room_name, owner_id, room_rule)
 
     def add_message(self, message: ChatMessage) -> None:
         '''

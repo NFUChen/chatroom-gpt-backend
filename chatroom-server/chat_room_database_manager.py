@@ -11,6 +11,7 @@ class Room:
     owner_id: str
     is_deleted: bool
     room_type: str
+    room_rule: str
 
 
 class ChatRoomDataBaseManager:
@@ -27,7 +28,7 @@ class ChatRoomDataBaseManager:
         is_deleted BOOLEAN NOT NULL DEFAULT 0,
         FOREIGN KEY (owner_id) REFERENCES users(user_id)
         '''
-        post_json = {
+        add_room_post_json = {
             "queue": "add_room", 
             "data": {
                 "room_id": room.room_id,
@@ -36,7 +37,21 @@ class ChatRoomDataBaseManager:
                 "room_type": room.room_type
             }
         }
-        return self.__post_to_producer(post_json)
+        add_default_room_rule_json = {
+            "queue": "add_room_config",
+            "data": {
+                "room_id": room.room_id,
+                "room_rule": room.room_rule
+            }
+        }
+        
+        add_room_post_resp = self.__post_to_producer(add_room_post_json)
+        add_default_room_rule_resp = self.__post_to_producer(add_default_room_rule_json)
+        
+        return {
+            "add_room_resp": add_room_post_resp,
+            "add_room_rule_resp": add_default_room_rule_resp
+        }
     
     def delete_room(self, room: Room) -> None:
         
@@ -102,14 +117,17 @@ class ChatRoomDataBaseManager:
     
     def query_all_rooms(self) -> list[dict[str, str]]:
         sql = f"""
-            SELECT * FROM rooms
-        """ 
+            SELECT rooms.*, room_configs.room_rule FROM rooms
+            LEFT JOIN room_configs
+            ON rooms.room_id = room_configs.room_id;
+        """
         post_json = {
             "query": sql
         }
-        return requests.post(
+        rooms_dicts = requests.post(
             self.query_api, json= post_json
         ).json()["data"]
+        return rooms_dicts
 
 
     def query_rooms(self, room_ids: list[str]) -> list[dict[str, str]]:

@@ -72,7 +72,6 @@ CREATE TABLE
         ## for qdrant uuid
         text TEXT NOT NULL,
         text_hash VARCHAR(64) NOT NULL UNIQUE,
-        # hash is saved in a form of {collection_name-hash}
         updated_at DATETIME NOT NULL ON UPDATE CURRENT_TIMESTAMP,
         vector JSON NOT NULL,
         UNIQUE KEY `unique_key` (
@@ -89,6 +88,13 @@ CREATE TABLE
         key_id INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
         api_key CHAR(51) UNIQUE NOT NULL,
         is_disabled BOOLEAN DEFAULT 0 NOT NULL
+    );
+
+CREATE TABLE
+    IF NOT EXISTS room_configs (
+        room_id VARCHAR(36) PRIMARY KEY NOT NULL,
+        room_rule TEXT NOT NULL,
+        FOREIGN KEY (room_id) REFERENCES rooms(room_id)
     );
 
 INSERT INTO
@@ -108,3 +114,10 @@ INSERT INTO
         is_deleted
     )
 VALUES ('dev', 1, 'room_test', 'dev', 1);
+
+INSERT INTO
+    room_configs (
+        room_id,
+        room_rule
+    )
+VALUES ('dev', "dev rule");

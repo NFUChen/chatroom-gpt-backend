@@ -29,6 +29,17 @@ def insert_room_callback(ch, method, properties, body):
         message_dict["room_name"],
         message_dict["room_type"]
     )
+    
+def insert_room_configs_callback(ch, method, properties, body):
+    '''
+    room_id VARCHAR(36) PRIMARY KEY NOT NULL,
+    room_rule TEXT NOT NULL
+    '''
+    message_dict = ast.literal_eval(body.decode())
+    mysqldb_manager.insert_room_config(
+        message_dict["room_id"],
+        message_dict["room_rule"]
+    )
 
 def insert_message_callback(ch, method, properties, body):
     '''
@@ -102,6 +113,7 @@ def insert_gpt_response(ch, method, properties, body):
 queue_with_callbacks = (
     ("user", insert_user_callback),
     ("add_room", insert_room_callback),
+    ("add_room_config", insert_room_configs_callback),
     ("add_message", insert_message_callback),
     ("delete_room", delete_room_callback),
     ("embeddings", insert_embedding_callback)
