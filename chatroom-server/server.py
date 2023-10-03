@@ -140,7 +140,11 @@ def create_room():
     request_json = request.get_json()
     room_name = request_json["room_name"]
     owner_id = request_json["user"]["user_id"]
-    new_room = Room.create_new_room(room_name, owner_id)
+    
+    if len(room_name) == 0:
+        raise ValueError("Room name should not be empty")
+    
+    new_room = Room.create_new_room(room_name, owner_id, Room.DEFAULT_ROOM_RULE)
     room_manager.add_room(new_room)
     return new_room.to_dict()
 
@@ -271,19 +275,17 @@ def cmd():
     
     def wrapper():
         try:
-            if operation == "answer":
-                print(f"Lock the room: {room_id}", flush= True)
-                prompt_message = ChatMessage.create_chat_message("ai", user_id, user_name, room_id, request_json.get("prompt"), False)
-                room.add_cached_prompt_message(prompt_message)
-                room.lock_room()
+            print(f"Lock the room: {room_id}", flush= True)
+            prompt_message = ChatMessage.create_chat_message("ai", user_id, user_name, room_id, request_json.get("prompt"), False)
+            room.add_cached_prompt_message(prompt_message)
+            room.lock_room()
             resp = requests.post(f"{CHATBOT_SERVER}/{operation}", json= post_json)
             print(f"Posting json: {post_json}")
             print(resp.json(), flush= True)
         finally:
-            if operation == "answer":
-                room.unlock_room()
-                room.remove_cacached_message()
-                print(f"Unlock the room: {room_id}", flush= True)
+            room.unlock_room()
+            room.remove_cacached_message()
+            print(f"Unlock the room: {room_id}", flush= True)
     
     threading.Thread(target= wrapper).start()
 
