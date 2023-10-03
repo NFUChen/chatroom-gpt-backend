@@ -44,7 +44,9 @@ def answer():
     user_id = request_json["user_id"]
     user_name = request_json["user_name"]
     messages = request_json["messages"]
+    room_rule = request_json["room_rule"]
     answer_service = ChatRoomAnswerService(
+        room_rule= room_rule,
         prompt= prompt, 
         api_key= api_key, 
         room_id= room_id,

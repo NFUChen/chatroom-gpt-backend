@@ -19,8 +19,9 @@ from chatbot import ChatBot
 class ChatRoomAnswerService:
     ai_user_dict = query_ai_user_dict()
     CHATROOM_SERVER = "http://chatroom-server:5000"
-    def __init__(self, prompt: str, api_key: str, room_id: str, user_id: str, user_name: str,messages: list[dict[str, str]]) -> None:
+    def __init__(self, prompt: str, room_rule: str, api_key: str, room_id: str, user_id: str, user_name: str,messages: list[dict[str, str]]) -> None:
         self.prompt = prompt
+        self.room_rule = room_rule
         self.__validate_prompt(self.prompt, 3000)
         openai.api_key = api_key
         self.room_id = room_id
@@ -40,7 +41,7 @@ class ChatRoomAnswerService:
         all_relevant_docs = self.__get_relevant_docs("\n".join(querys))
         all_logs = "\n".join([f"{str(doc)}" for doc in all_relevant_docs])
         all_logs = self.__summarize_if_text_exceed_context_window_limit(all_logs, 8000)
-        system_prompt = create_assistant_base_pompt() + create_vector_store_context_prompt(all_logs)
+        system_prompt = create_assistant_base_pompt(self.room_rule) + create_vector_store_context_prompt(all_logs)
         self.__emit_message_to_room(self.user_id,self.user_name, self.prompt)
         bot = self.__bot_answer(system_prompt)
         return  {
@@ -87,7 +88,7 @@ class ChatRoomAnswerService:
         all_log = self.__summarize_if_text_exceed_context_window_limit(all_log, 8000)
             
 
-        system_prompt = create_assistant_base_pompt() + create_web_context_prompt(all_log)
+        system_prompt = create_assistant_base_pompt(self.room_rule) + create_web_context_prompt(all_log)
         bot = self.__bot_answer(system_prompt)
         
         return  {
