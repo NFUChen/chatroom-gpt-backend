@@ -9,7 +9,8 @@ from chat_room_utils import (
 from utils import (
     handle_server_errors, 
     login_required, 
-    emit_socket_event
+    emit_socket_event,
+    CHINESE_ROOM_RULE_TIPS
 )
 from room import Room
 from chat_message import ChatMessage
@@ -182,7 +183,7 @@ def get_room_rule():
     full_id = f"{user_id}-{user_name}"
     room_id = room_manager.get_user_location(full_id)
     room = room_manager.get_room_by_id(room_id)
-    return room.room_rule
+    return {"room_rule_tips": CHINESE_ROOM_RULE_TIPS ,"room_rule": room.room_rule}
 
 @app.route("/update_room_rule", methods=["POST"])
 @handle_server_errors
@@ -190,8 +191,6 @@ def get_room_rule():
 def update_room_rule():
     request_json = request.get_json()
     room_rule =  request_json["room_rule"] #required
-    if room_rule == room.room_rule:
-        return "ok"
     char_length_limit = 500
     if len(room_rule) > char_length_limit:
         raise ValueError(f"Room rule should not be longer than {char_length_limit} characters")
@@ -201,6 +200,8 @@ def update_room_rule():
     full_id = f"{user_id}-{user_name}"
     room_id = room_manager.get_user_location(full_id)
     room = room_manager.get_room_by_id(room_id)
+    if room_rule == room.room_rule:
+        return "ok"
     if user_id != room.owner_id:
         raise ValueError(f"User {user_id} is not the owner of room {room_id}, cannot update room rule")
     

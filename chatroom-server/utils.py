@@ -78,3 +78,15 @@ def emit_socket_event(socket_event: str, data: Any) -> None:
             "data": data
     }
     single(socket_event, json.dumps(payload), 1, hostname= "mosquitto")
+
+CHINESE_ROOM_RULE_TIPS = """
+1. 自我介紹和問候規則：
+指定AI助手在使用者進入聊天室時應如何問候他們。
+確定介紹的語氣和風格，例如正式、隨意、友好或專業。
+2. 回應風格：
+定義AI助手的首選回應風格，例如信息性、幽默、簡潔或冗長。
+指定AI是否應該使用表情符號或說他語言偏好。
+3. 對話流程和主題：
+概述首選的對話流程，包括如何引入和更改話題。
+指定AI是否應堅持特定主題或是否可以討論各種主題。
+"""
