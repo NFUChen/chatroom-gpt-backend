@@ -190,6 +190,12 @@ def get_room_rule():
 def update_room_rule():
     request_json = request.get_json()
     room_rule =  request_json["room_rule"] #required
+    if room_rule == room.room_rule:
+        return "ok"
+    char_length_limit = 500
+    if len(room_rule) > char_length_limit:
+        raise ValueError(f"Room rule should not be longer than {char_length_limit} characters")
+
     user_id = request_json["user"]["user_id"]
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
