@@ -17,6 +17,7 @@ class Room:
 class ChatRoomDataBaseManager:
     def __init__(self) -> None:
         self.query_api = f"http://query_manager:5000/query"
+        self.update_api = f"http://query_manager:5000/update"
         self.produce_api =  "http://producer:5000/produce"
 
     def add_room(self, room: Room) -> None:
@@ -234,6 +235,21 @@ class ChatRoomDataBaseManager:
         cache_service.cache(message_id, messages)
         
         return messages
+    
+    def update_room_rule(self, room_id: str, room_rule: str) -> str:
+        sql = f"""
+            UPDATE room_configs SET room_rule = '{room_rule}' WHERE room_id = '{room_id}';
+        """
+        post_json = {
+            "query": sql
+        }
+        updated_result =  requests.post(
+            self.update_api, json= post_json
+        ).json()
+
+        if updated_result["error"] is not None:
+            raise ValueError(updated_result["error"])
+        return updated_result["message"]
 
 
 chat_room_db_manager = ChatRoomDataBaseManager()

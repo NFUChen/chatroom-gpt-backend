@@ -184,6 +184,22 @@ def get_room_rule():
     room = room_manager.get_room_by_id(room_id)
     return room.room_rule
 
+@app.route("/update_room_rule", methods=["POST"])
+@handle_server_errors
+@login_required
+def update_room_rule():
+    request_json = request.get_json()
+    room_rule =  request_json["room_rule"] #required
+    user_id = request_json["user"]["user_id"]
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+    room_id = room_manager.get_user_location(full_id)
+    room = room_manager.get_room_by_id(room_id)
+    if user_id != room.owner_id:
+        raise ValueError(f"User {user_id} is not the owner of room {room_id}, cannot update room rule")
+    
+    return room.update_room_rule(room_rule)
+
 
 @app.route("/emit_message_to_room", methods=["POST"])
 @handle_server_errors

@@ -38,6 +38,25 @@ class MySqlQueryManaer:
                 "data": [],
                 "error": str(error)
             }
+        
+    def execute_update(self, sql: str) -> dict[str, str]:
+        try:
+            if not self.connection or not self.connection.ping(reconnect=True):
+                self.connect()
+            with self.connection.cursor() as cursor:
+                affected_rows = cursor.execute(sql)
+                self.connection.commit()
+            return {
+                "message": f"UPDATE successful. {affected_rows} rows affected.",
+                "error": None
+            }
+        except Exception as error:
+            print(f"Error while executing UPDATE query: {error}", flush=True)
+            return {
+                "message": "UPDATE failed.",
+                "error": str(error)
+            }
+        
 
 query_manager = MySqlQueryManaer("mysql", "root", "chatchat-admin", "db")
 

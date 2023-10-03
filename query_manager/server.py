@@ -18,6 +18,12 @@ def query():
     query = request_json["query"]
     return query_manager.query(query)
 
+@app.route("/update", methods= ["POST"])
+def execute_update():
+    request_json: dict[str, str] = request.get_json()
+    query = request_json["query"]
+    return query_manager.execute_update(query)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug= True)

@@ -105,6 +105,11 @@ class Room:
         chat_room_db_manager.add_message(message)
 
         current_messages.append(message)
+
+    def update_room_rule(self, rule: str) -> str:
+        update_result = chat_room_db_manager.update_room_rule(self.room_id, rule)
+        self.room_rule = rule
+        return update_result
     
     def to_dict(self, is_message_included: bool = False) -> dict[str, Any]:
         dict_copy = deepcopy(self.__dict__)
