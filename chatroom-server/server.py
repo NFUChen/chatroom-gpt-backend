@@ -162,13 +162,28 @@ def delete_room():
 @login_required
 def get_room_info():
     request_json = request.get_json()
-    room_id = request_json["room_id"]
     is_message_included = request_json.get("is_message_included", False)
-
+    user_id = request_json["user"]["user_id"]
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+    room_id = room_manager.get_user_location(full_id)
     room = room_manager.get_room_by_id(room_id)
     return room.to_dict(
             is_message_included= is_message_included
             )
+
+@app.route("/room_rule", methods=["POST"])
+@handle_server_errors
+@login_required
+def get_room_rule():
+    request_json = request.get_json()
+    user_id = request_json["user"]["user_id"]
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+    room_id = room_manager.get_user_location(full_id)
+    room = room_manager.get_room_by_id(room_id)
+    return room.room_rule
+
 
 @app.route("/emit_message_to_room", methods=["POST"])
 @handle_server_errors
@@ -260,6 +275,7 @@ def cmd():
     cmd_lookup = [
         ("answer", "messages", messages), # operation_name, post_json_key, post_json_value
         ("answer", "prompt", request_json.get("prompt")),
+        ("answer", "room_rule", room.room_rule),
         ("answer", "source", request_json.get("source")),
         ("memo", "prompt", request_json.get("prompt"))
     ]

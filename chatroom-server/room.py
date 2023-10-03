@@ -132,5 +132,6 @@ class Room:
         dict_copy["num_of_people"] = self.number_of_people
         dict_copy["room_members"] = self.get_room_members()
         dict_copy.pop("user_ids")
+        dict_copy.pop("room_rule")
         return dict_copy
         
