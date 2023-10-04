@@ -15,7 +15,7 @@ class RoomType(Enum):
 
 
 class Room:
-    MAX_MESSAGE_LENGTH = 50
+    MAX_MESSAGE_LENGTH = 5
     DEFAULT_ROOM_RULE = "Please enter your custom instruction."
     def __init__(self, 
                  room_id: str, 
