@@ -20,6 +20,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import uuid
 import openai
 from chatroom_answer_service import ChatRoomAnswerService
+from chat_room_resource_service import ChatRoomResouceService
+import threading
+
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -60,8 +63,14 @@ def answer():
         "web": answer_service.ask_web
     }
     handler = source_lookup[source]
-
-    return handler()
+    resource_service = ChatRoomResouceService(
+        room_id= room_id,
+        user_id= user_id,
+        user_name= user_name,
+        prompt= prompt
+    )
+    threading.Thread(target= lambda: resource_service.run_external_service(handler)).start()
+    return "ok"
 
 @app.route("/count_tokens", methods=["POST"])
 def count_tokens():
