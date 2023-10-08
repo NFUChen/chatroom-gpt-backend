@@ -294,7 +294,6 @@ def cmd():
     }
     
     messages = [message.to_dict() for message in room.get_ai_messages(4)]
-    
     cmd_lookup = [
         ("answer", "messages", messages), # operation_name, post_json_key, post_json_value
         ("answer", "prompt", request_json.get("prompt")),
@@ -312,27 +311,36 @@ def cmd():
     if is_test:
         return post_json
     
-    def wrapper():
-        try:
-            print(f"Lock the room: {room_id}", flush= True)
-            prompt_message = ChatMessage.create_chat_message("ai", user_id, user_name, room_id, request_json.get("prompt"), False)
-            room.add_cached_prompt_message(prompt_message)
-            room.lock_room()
-            resp = requests.post(f"{CHATBOT_SERVER}/{operation}", json= post_json)
-            print(f"Posting json: {post_json}")
-            print(resp.json(), flush= True)
-        finally:
-            room.unlock_room()
-            room.remove_cacached_message()
-            print(f"Unlock the room: {room_id}", flush= True)
-    
-    threading.Thread(target= wrapper).start()
-
-    
+    resp = requests.post(f"{CHATBOT_SERVER}/{operation}", json= post_json)
+    print(f"Posting json: {post_json}")
+    print(resp.json(), flush= True)
     return post_json
 
 
-@app.route("/acquire_room_lock") # the lock is acquired by robot, so no need for login
+@app.route("/add_cached_prompt_message", methods = ["POST"])
+@handle_server_errors
+def add_cached_prompt_message():
+    request_json = request.get_json()
+    user_id = request_json["user_id"]
+    user_name = request_json["user_name"]
+    room_id = request_json["room_id"]
+    prompt = request_json.get("prompt")
+    message = ChatMessage.create_chat_message("ai", user_id, user_name, room_id, prompt, False)
+    room = room_manager.get_room_by_id(room_id)
+    room.add_cached_prompt_message(message)
+    return f"Add cached prompt message for room {room_id}, user: {user_id}"
+
+@app.route("/remove_cached_prompt_message", methods = ["POST"])
+@handle_server_errors
+def remove_cached_message():
+    request_json = request.get_json()
+    room_id = request_json["room_id"]
+    room = room_manager.get_room_by_id(room_id)
+    room.remove_cacached_message()
+    return f"Remove cached prompt message for room {room_id}"
+
+
+@app.route("/acquire_room_lock", methods = ["POST"]) # the lock is acquired by robot, so no need for login
 @handle_server_errors
 def acquire_room_lock():
     request_json = request.get_json()
@@ -341,7 +349,8 @@ def acquire_room_lock():
 
     return f"Room: {room_id} locked"
 
-@app.route("/release_room_lock")
+@app.route("/release_room_lock", methods = ["POST"])
+@handle_server_errors
 def release_room_lock():
     request_json = request.get_json()
     room_id = request_json["room_id"]
