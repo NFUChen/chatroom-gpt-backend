@@ -184,6 +184,18 @@ def get_room_rule():
     room = room_manager.get_room_by_id(room_id)
     return {"room_rule_tips": CHINESE_ROOM_RULE_TIPS ,"room_rule": room.room_rule}
 
+@app.route("/room_password", methods=["POST"])
+@handle_server_errors
+@login_required
+def get_room_password():
+    request_json = request.get_json()
+    user_id = request_json["user"]["user_id"]
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+    room_id = room_manager.get_user_location(full_id)
+    room = room_manager.get_room_by_id(room_id)
+    return room.room_password
+
 @app.route("/update_room_rule", methods=["POST"])
 @handle_server_errors
 @login_required
