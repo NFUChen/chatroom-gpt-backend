@@ -1,4 +1,5 @@
 Flask==2.2.2
+werkzeug==2.2.2
 Flask-Cors==3.0.10
 flask-socketio==5.3.4
 eventlet==0.33.3
