@@ -12,7 +12,7 @@ from utils import (
     emit_socket_event,
     CHINESE_ROOM_RULE_TIPS
 )
-from room import Room, RoomType
+from room import Room
 from chat_message import ChatMessage
 import logging
 import requests
@@ -145,6 +145,14 @@ def create_room():
     room_type = request_json["room_type"]
     room_password = request_json.get("room_password", "")
     new_room = Room.create_new_room(room_type, room_name, owner_id, room_password)
+    chat_room_db_manager.add_room(
+        room_id= new_room.room_id, 
+        owner_id= new_room.owner_id, 
+        room_name= new_room.room_name, 
+        room_type= new_room.room_type, 
+        room_rule= new_room.room_rule, 
+        room_password= new_room.room_password
+    )
     room_manager.add_room(new_room)
     return new_room.to_dict()
 
@@ -154,7 +162,8 @@ def create_room():
 def delete_room():
     request_json = request.get_json()
     room_id = request_json["room_id"]
-    popped_room =  room_manager.pop_room(room_id)
+    chat_room_db_manager.delete_room(room_id)
+    popped_room = room_manager.pop_room(room_id)
     return popped_room.to_dict()
 
 @app.route("/room_info", methods=["POST"])
@@ -215,8 +224,9 @@ def update_room_rule():
         return "ok"
     if user_id != room.owner_id:
         raise ValueError(f"User {user_id} is not the owner of room {room_id}, cannot update room rule")
-    
-    return room.update_room_rule(room_rule)
+    chat_room_db_manager.update_room_rule(room_id, room_rule)
+    new_rule = room.update_room_rule(room_rule)
+    return new_rule
 
 
 @app.route("/emit_message_to_room", methods=["POST"])
@@ -267,6 +277,15 @@ def emit_message_to_room():
         "is_message_persist": is_message_persist
     }
     if is_message_persist:
+        chat_room_db_manager.add_message(
+            message_id= chat_message.message_id,
+            message_type= chat_message.message_type,
+            user_id= chat_message.user_id,
+            room_id= chat_message.room_id,
+            content= chat_message.content,
+            created_at= chat_message.created_at,
+            is_memo= chat_message.is_memo
+        )
         room.add_message(
             chat_message
         )

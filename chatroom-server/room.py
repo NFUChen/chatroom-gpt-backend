@@ -4,7 +4,6 @@ from copy import deepcopy
 from enum import Enum
 from chat_message import ChatMessage
 import uuid
-from chat_room_database_manager import chat_room_db_manager
 
 class RoomType(Enum):
     PUBLIC = "public"
@@ -120,15 +119,12 @@ class Room:
         current_messages = self.messages[message.message_type]
         if len(current_messages) >= self.MAX_MESSAGE_LENGTH:
             current_messages.pop(0)
-        # add messages to db via publisher
-        chat_room_db_manager.add_message(message)
 
         current_messages.append(message)
 
     def update_room_rule(self, rule: str) -> str:
-        update_result = chat_room_db_manager.update_room_rule(self.room_id, rule)
         self.room_rule = rule
-        return update_result
+        return self.room_rule
     
     def to_dict(self, is_message_included: bool = False) -> dict[str, Any]:
         dict_copy = deepcopy(self.__dict__)

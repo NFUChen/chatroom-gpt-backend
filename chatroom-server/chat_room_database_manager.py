@@ -1,18 +1,8 @@
-from chat_message import ChatMessage
 from datetime import datetime
 import requests
-from dataclasses import dataclass
 from typing import Any
 from cache_service import cache_service
-@dataclass
-class Room:
-    room_id: str
-    room_name: str
-    owner_id: str
-    is_deleted: bool
-    room_type: str
-    room_rule: str
-    room_password: str
+
 
 
 class ChatRoomDataBaseManager:
@@ -21,7 +11,7 @@ class ChatRoomDataBaseManager:
         self.update_api = f"http://query_manager:5000/update"
         self.produce_api =  "http://producer:5000/produce"
 
-    def add_room(self, room: Room) -> None:
+    def add_room(self, room_id: str, owner_id: int, room_name: str, room_type: str, room_rule: str, room_password: str) -> None:
         '''
         room_id VARCHAR(36) PRIMARY KEY NOT NULL,
         owner_id INT NOT NULL,
@@ -33,18 +23,18 @@ class ChatRoomDataBaseManager:
         add_room_post_json = {
             "queue": "add_room", 
             "data": {
-                "room_id": room.room_id,
-                "owner_id": room.owner_id,
-                "room_name": room.room_name,
-                "room_type": room.room_type
+                "room_id": room_id,
+                "owner_id": owner_id,
+                "room_name": room_name,
+                "room_type": room_type
             }
         }
         add_default_room_config_json = {
             "queue": "add_room_config",
             "data": {
-                "room_id": room.room_id,
-                "room_rule": room.room_rule,
-                "room_password": room.room_password
+                "room_id": room_id,
+                "room_rule": room_rule,
+                "room_password": room_password
             }
         }
         
@@ -56,18 +46,18 @@ class ChatRoomDataBaseManager:
             "add_room_rule_resp": add_default_room_rule_resp
         }
     
-    def delete_room(self, room: Room) -> None:
+    def delete_room(self, room_id: str) -> None:
         
         post_json = {
             "queue": "delete_room",
             "data": {
-                "room_id": room.room_id
+                "room_id": room_id
             }
         }
 
         return self.__post_to_producer(post_json)
     
-    def add_message(self, message: ChatMessage) -> None:
+    def add_message(self, message_id: str, message_type: str, room_id: str, user_id: int, content: str, created_at: str, is_memo: bool) -> None:
         '''
         message_id VARCHAR(36) PRIMARY KEY NOT NULL,
         message_type VARCHAR(10) CHECK (
@@ -85,13 +75,13 @@ class ChatRoomDataBaseManager:
         post_json = {
             "queue": "add_message",
             "data": {
-                "message_id": message.message_id,
-                "message_type": message.message_type,
-                "room_id": message.room_id,
-                "user_id": message.user_id,
-                "content": message.content,
-                "created_at": message.created_at,
-                "is_memo": message.is_memo
+                "message_id": message_id,
+                "message_type": message_type,
+                "room_id": room_id,
+                "user_id": user_id,
+                "content": content,
+                "created_at": created_at,
+                "is_memo": is_memo
             }
         }
         return self.__post_to_producer(post_json)
