@@ -12,11 +12,10 @@ from utils import (
     emit_socket_event,
     CHINESE_ROOM_RULE_TIPS
 )
-from room import Room
+from room import Room, RoomType
 from chat_message import ChatMessage
 import logging
 import requests
-import threading
 from chat_room_database_manager import chat_room_db_manager
 
 logging.basicConfig(level=logging.DEBUG)
@@ -44,12 +43,13 @@ def update_api_keys():
 def join_room():
     request_json = request.get_json()
     room_id = request_json["room_id"] #required
+    room_password = request_json.get("room_password", "") 
 
     user_id = request_json["user"]["user_id"]
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
 
-    joined_room = room_manager.user_join_room(full_id, room_id)
+    joined_room = room_manager.user_join_room(full_id, room_id, room_password)
     notification = {
         "user_id": user_id,
         "user_name": user_name,
@@ -91,6 +91,7 @@ def auto_switch_room():
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
     target_room_id = request_json["room_id"]
+    room_password = request_json.get("room_password", "")
 
     notification = {
             "user_name": user_name,
@@ -104,7 +105,7 @@ def auto_switch_room():
         return target_room.to_dict(is_message_included= True)
     
     if current_room_id is None:
-        joined_room = room_manager.user_join_room(full_id, target_room_id)
+        joined_room = room_manager.user_join_room(full_id, target_room_id, room_password)
         notification["is_join"] = True
         emit_socket_event(joined_room.get_socket_event("notification"), notification)
         emit_socket_event(joined_room.get_socket_event("number_of_people"), joined_room.number_of_people)
@@ -115,7 +116,7 @@ def auto_switch_room():
         notification["is_join"] = False
         emit_socket_event(left_room.get_socket_event("notification"), notification)
         emit_socket_event(left_room.get_socket_event("number_of_people"), left_room.number_of_people)
-        joined_room = room_manager.user_join_room(full_id, target_room_id)
+        joined_room = room_manager.user_join_room(full_id, target_room_id, room_password)
         notification["is_join"] = True
         emit_socket_event(joined_room.get_socket_event("notification"), notification)
         emit_socket_event(joined_room.get_socket_event("number_of_people"), joined_room.number_of_people)
@@ -141,11 +142,9 @@ def create_room():
     request_json = request.get_json()
     room_name = request_json["room_name"]
     owner_id = request_json["user"]["user_id"]
-    
-    if len(room_name) == 0:
-        raise ValueError("Room name should not be empty")
-    
-    new_room = Room.create_new_room(room_name, owner_id, Room.DEFAULT_ROOM_RULE)
+    room_type = request_json["room_type"]
+    room_password = request_json.get("room_password", "")
+    new_room = Room.create_new_room(room_type, room_name, owner_id, room_password)
     room_manager.add_room(new_room)
     return new_room.to_dict()
 

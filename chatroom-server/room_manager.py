@@ -7,7 +7,7 @@ class RoomManager:
         }
         self.user_location_dict:dict[str, str] = {}
     
-    def user_join_room(self,full_user_id: str, room_id: str ) -> Room:
+    def user_join_room(self,full_user_id: str, room_id: str, room_password: str) -> Room:
 
         if full_user_id in self.user_location_dict:
             raise ValueError(f"User [{full_user_id}] aleady in {self.user_location_dict[full_user_id]}")
@@ -15,11 +15,10 @@ class RoomManager:
             raise ValueError(f"Room {room_id} not found")
         
     
-
+        room = self.rooms_dict[room_id]
+        room.user_join_room(full_user_id, room_password)
         self.user_location_dict[full_user_id] = room_id
         
-        room = self.rooms_dict[room_id]
-        room.user_join_room(full_user_id)
 
         return room
 

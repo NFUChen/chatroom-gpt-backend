@@ -17,19 +17,23 @@ class RoomType(Enum):
 class Room:
     MAX_MESSAGE_LENGTH = 20
     DEFAULT_ROOM_RULE = "Please enter your custom instruction."
+    PASSWORD_MIN_LENGTH = 4
+    PASSWORD_MAX_LENGTH = 16
     def __init__(self, 
                  room_id: str, 
                  room_name: str, 
                  owner_id: int,
                  room_rule: str,
+                 room_type: str,
+                 room_password: str,
                  is_deleted: bool = 0,
-                 room_type: str = RoomType.PUBLIC.value
                  ) -> None:
         self.room_id = room_id
         self.room_name = room_name
         self.owner_id = owner_id
         self.room_rule = room_rule
         self.room_type = room_type
+        self.room_password = room_password
         self.user_ids: list[str] = []
         self.messages = self._get_empty_messages()
         self.is_deleted = True if is_deleted else False
@@ -77,10 +81,13 @@ class Room:
     def get_ai_messages(self, last_n: int) -> list[ChatMessage]:
         return self.messages["ai"][-last_n:]
             
-    def user_join_room(self, user_id: str) -> None:
+    def user_join_room(self, user_id: str, room_password: str) -> None:
         if user_id in self.user_ids:
             return
         
+        if self.room_type == RoomType.PRIVATE.value and self.room_password != room_password:
+            raise ValueError(f"Wrong password for joining room: {self.room_id}")
+                
         self.user_ids.append(user_id)
 
     def user_leave_room(self, user_id: str) -> None:
@@ -88,11 +95,23 @@ class Room:
             return
 
         self.user_ids.remove(user_id)
-
-    @staticmethod
-    def create_new_room(room_name: str, owner_id: int, room_rule: str) -> Room:
+  
+    @classmethod
+    def create_new_room(cls, room_type: str, room_name: str, owner_id: int, room_password: str) -> Room:
+        valid_room_types = [RoomType.PRIVATE.value, RoomType.PUBLIC.value]
+        if room_type not in valid_room_types:
+            raise ValueError(f"Room type '{room_type}' is not supported, please enter one of the following: {valid_room_types}")
+        if len(room_name) == 0:
+            raise ValueError("Room name should not be empty")
+        password_length = len(room_password)
+        
+        if password_length < cls.PASSWORD_MIN_LENGTH:
+            raise ValueError(f"Room password should be at least {cls.PASSWORD_MIN_LENGTH} characters long")
+        if password_length > cls.PASSWORD_MAX_LENGTH:
+            raise ValueError(f"Room password should be at most {cls.PASSWORD_MAX_LENGTH} characters long")
+    
         room_id = str(uuid.uuid4())
-        return Room(room_id, room_name, owner_id, room_rule)
+        return Room(room_id, room_name, owner_id, cls.DEFAULT_ROOM_RULE, room_type, room_password)
 
     def add_message(self, message: ChatMessage) -> None:
         '''
@@ -138,5 +157,6 @@ class Room:
         dict_copy["room_members"] = self.get_room_members()
         dict_copy.pop("user_ids")
         dict_copy.pop("room_rule")
+        dict_copy.pop("room_password")
         return dict_copy
         

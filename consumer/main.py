@@ -38,7 +38,8 @@ def insert_room_configs_callback(ch, method, properties, body):
     message_dict = ast.literal_eval(body.decode())
     mysqldb_manager.insert_room_config(
         message_dict["room_id"],
-        message_dict["room_rule"]
+        message_dict["room_rule"],
+        message_dict["room_password"]
     )
 
 def insert_message_callback(ch, method, properties, body):

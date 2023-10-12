@@ -94,6 +94,7 @@ CREATE TABLE
     IF NOT EXISTS room_configs (
         room_id VARCHAR(36) PRIMARY KEY NOT NULL,
         room_rule TEXT NOT NULL,
+        room_password VARCHAR(16),
         FOREIGN KEY (room_id) REFERENCES rooms(room_id)
     );
 

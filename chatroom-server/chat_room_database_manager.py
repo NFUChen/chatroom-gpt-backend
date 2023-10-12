@@ -12,6 +12,7 @@ class Room:
     is_deleted: bool
     room_type: str
     room_rule: str
+    room_password: str
 
 
 class ChatRoomDataBaseManager:
@@ -38,16 +39,17 @@ class ChatRoomDataBaseManager:
                 "room_type": room.room_type
             }
         }
-        add_default_room_rule_json = {
+        add_default_room_config_json = {
             "queue": "add_room_config",
             "data": {
                 "room_id": room.room_id,
-                "room_rule": room.room_rule
+                "room_rule": room.room_rule,
+                "room_password": room.room_password
             }
         }
         
         add_room_post_resp = self.__post_to_producer(add_room_post_json)
-        add_default_room_rule_resp = self.__post_to_producer(add_default_room_rule_json)
+        add_default_room_rule_resp = self.__post_to_producer(add_default_room_config_json)
         
         return {
             "add_room_resp": add_room_post_resp,
@@ -118,7 +120,7 @@ class ChatRoomDataBaseManager:
     
     def query_all_rooms(self) -> list[dict[str, str]]:
         sql = f"""
-            SELECT rooms.*, room_configs.room_rule FROM rooms
+            SELECT rooms.*, room_configs.room_rule, room_configs.room_password FROM rooms
             LEFT JOIN room_configs
             ON rooms.room_id = room_configs.room_id;
         """
@@ -246,6 +248,7 @@ class ChatRoomDataBaseManager:
         updated_result =  requests.post(
             self.update_api, json= post_json
         ).json()
+        print(updated_result, flush= True)
 
         if updated_result["error"] is not None:
             raise ValueError(updated_result["error"])

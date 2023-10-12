@@ -46,9 +46,9 @@ class MySqlDataBaseManaer:
         sql = "INSERT INTO rooms (room_id, owner_id, room_name, room_type) VALUES (%s, %s, %s, %s)"
         return self._execute(sql, (room_id ,owner_id, room_name, room_type))
     
-    def insert_room_config(self, room_id: str, room_rule: str) -> Any:
-        sql = "INSERT INTO room_configs (room_id, room_rule) VALUES (%s, %s)"
-        return self._execute(sql, (room_id ,room_rule))
+    def insert_room_config(self, room_id: str, room_rule: str, room_password: str) -> Any:
+        sql = "INSERT INTO room_configs (room_id, room_rule, room_password) VALUES (%s, %s, %s)"
+        return self._execute(sql, (room_id ,room_rule, room_password))
     
     def delete_room(self, room_id: str) -> Any:
         sql = f"UPDATE rooms SET is_deleted = 1 WHERE room_id = {room_id}"
