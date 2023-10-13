@@ -42,11 +42,15 @@ class Room:
     @property
     def number_of_people(self) -> int:
         return len(self.user_ids)
+    
+    def __get_user_id_and_name(self, full_user_id: str) -> tuple[int, str]:
+        user_id, user_name = full_user_id.split("-")
+        return int(user_id), user_name
 
     def get_room_members(self) -> list[dict[str, int | str]]:
         members = []
-        for user in self.user_ids:
-            user_id, user_name = user.split("-")
+        for full_user_id in self.user_ids:
+            user_id, user_name = self.__get_user_id_and_name(full_user_id)
             members.append({
                 "user_id": int(user_id),
                 "user_name": user_name,
@@ -80,20 +84,24 @@ class Room:
     def get_ai_messages(self, last_n: int) -> list[ChatMessage]:
         return self.messages["ai"][-last_n:]
             
-    def user_join_room(self, user_id: str, room_password: str) -> None:
-        if user_id in self.user_ids:
+    def user_join_room(self, full_user_id: str, room_password: str) -> None:
+        if full_user_id in self.user_ids:
+            return
+        current_user_id, _ = self.__get_user_id_and_name(full_user_id)
+        if current_user_id == self.owner_id:
+            self.user_ids.append(full_user_id)
             return
         
         if self.room_type == RoomType.PRIVATE.value and self.room_password != room_password:
             raise ValueError(f"Wrong password for joining room: {self.room_id}")
                 
-        self.user_ids.append(user_id)
+        self.user_ids.append(full_user_id)
 
-    def user_leave_room(self, user_id: str) -> None:
-        if user_id not in self.user_ids:
+    def user_leave_room(self, full_user_id: str) -> None:
+        if full_user_id not in self.user_ids:
             return
 
-        self.user_ids.remove(user_id)
+        self.user_ids.remove(full_user_id)
   
     @classmethod
     def create_new_room(cls, room_type: str, room_name: str, owner_id: int, room_password: str) -> Room:
