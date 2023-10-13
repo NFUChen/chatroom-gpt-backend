@@ -90,15 +90,37 @@ class ChatRoomDataBaseManager:
         single_quoted_words = list(map(lambda word: f"'{word}'", words))
         return f"({' ,'.join(single_quoted_words)})"
 
-    def __post_to_producer(self, post_json: dict[str, Any]) -> dict[str, str]:
+    def __post_to_external_source(self, source_name: str, api_url: str,post_json: dict[str, Any]) -> dict[str, str]:
         resp_json = requests.post(
-            self.produce_api, json= post_json
+            api_url, json= post_json
         ).json()
         error = resp_json["error"]
         if error is not None:
-            raise ValueError(f"Producer: {error}")
+            raise ValueError(f"{source_name}: {error}")
+        print(resp_json, flush= True)
         return resp_json
     
+    def __post_to_producer(self, post_json: dict[str, Any]) -> dict[str, str]:
+        return self.__post_to_external_source(
+            source_name="producer",
+            api_url= self.produce_api,
+            post_json= post_json
+        )["data"]
+    
+    def __post_to_query(self, post_json: dict[str, Any]) -> dict[str, str]:
+        return self.__post_to_external_source(
+            source_name="query_manager",
+            api_url= self.query_api,
+            post_json= post_json
+        )["data"]
+    
+    def __post_to_query_update(self, post_json: dict[str, Any]) -> dict[str, str]:
+        return self.__post_to_external_source(
+            source_name="query_manager_update",
+            api_url= self.update_api,
+            post_json= post_json
+        )["message"]
+
     def __convert_gmt_into_utc_date(self, gmt_input_date: str) -> str:
         gmt_format = '%a, %d %b %Y %H:%M:%S GMT'
         utc_format = '%Y-%m-%d %H:%M:%S.%f'
@@ -117,10 +139,8 @@ class ChatRoomDataBaseManager:
         post_json = {
             "query": sql
         }
-        rooms_dicts = requests.post(
-            self.query_api, json= post_json
-        ).json()["data"]
-        return rooms_dicts
+        
+        return self.__post_to_query(post_json)
 
 
     def query_rooms(self, room_ids: list[str]) -> list[dict[str, str]]:
@@ -138,9 +158,7 @@ class ChatRoomDataBaseManager:
         post_json = {
             "query": sql
         }
-        return requests.post(
-            self.query_api, json= post_json
-        ).json()["data"]
+        return self.__post_to_query(post_json)
 
 
     def query_recent_n_chat_messsages(self, room_id: str, message_type: str, n_records: int) -> list[dict[str]]:
@@ -170,9 +188,7 @@ class ChatRoomDataBaseManager:
             "query": sql
         }
 
-        messages = requests.post(
-            self.query_api, json= post_json
-        ).json()["data"]
+        messages = self.__post_to_query(post_json)
 
         for message in messages:
             message["created_at"] = self.__convert_gmt_into_utc_date(message["created_at"])
@@ -215,9 +231,8 @@ class ChatRoomDataBaseManager:
         post_json = {
             "query": sql
         }
-        messages = requests.post(
-            self.query_api, json= post_json
-        ).json()["data"]
+        
+        messages = self.__post_to_query(post_json)
 
         for message in messages:
             message["created_at"] = self.__convert_gmt_into_utc_date(message["created_at"])
@@ -235,14 +250,28 @@ class ChatRoomDataBaseManager:
         post_json = {
             "query": sql
         }
-        updated_result =  requests.post(
-            self.update_api, json= post_json
-        ).json()
-        print(updated_result, flush= True)
+    
+        return self.__post_to_query_update(post_json)
+    
+    def change_room_type(self, room_id: str, room_type: str) -> str:
+        sql = f"""
+            UPDATE rooms SET room_type = '{room_type}' WHERE room_id = '{room_id}';
+        """
+        post_json = {
+            "query": sql
+        }
+    
+        return self.__post_to_query_update(post_json)
+    
+    def update_room_password(self, room_id: str, room_password: str) -> str:
+        sql = f"""
+            UPDATE room_configs SET room_password = '{room_password}' WHERE room_id = '{room_id}';
+        """
+        post_json = {
+            "query": sql
+        }
 
-        if updated_result["error"] is not None:
-            raise ValueError(updated_result["error"])
-        return updated_result["message"]
+        return self.__post_to_query_update(post_json)
 
 
 chat_room_db_manager = ChatRoomDataBaseManager()

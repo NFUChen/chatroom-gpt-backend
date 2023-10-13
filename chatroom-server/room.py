@@ -16,6 +16,7 @@ class RoomType(Enum):
 class Room:
     MAX_MESSAGE_LENGTH = 20
     DEFAULT_ROOM_RULE = "Please enter your custom instruction."
+    MAX_RULE_LENGTH = 500
     PASSWORD_MIN_LENGTH = 4
     PASSWORD_MAX_LENGTH = 16
     def __init__(self, 
@@ -102,20 +103,26 @@ class Room:
             return
 
         self.user_ids.remove(full_user_id)
-  
+
     @classmethod
-    def create_new_room(cls, room_type: str, room_name: str, owner_id: int, room_password: str) -> Room:
+    def _validate_room_type(self, room_type: str) -> None:
         valid_room_types = [RoomType.PRIVATE.value, RoomType.PUBLIC.value]
         if room_type not in valid_room_types:
             raise ValueError(f"Room type '{room_type}' is not supported, please enter one of the following: {valid_room_types}")
+        
+    @classmethod
+    def create_new_room(cls, room_type: str, room_name: str, owner_id: int, room_password: str) -> Room:
         if len(room_name) == 0:
             raise ValueError("Room name should not be empty")
-        password_length = len(room_password)
         
-        if password_length < cls.PASSWORD_MIN_LENGTH:
-            raise ValueError(f"Room password should be at least {cls.PASSWORD_MIN_LENGTH} characters long")
-        if password_length > cls.PASSWORD_MAX_LENGTH:
-            raise ValueError(f"Room password should be at most {cls.PASSWORD_MAX_LENGTH} characters long")
+        cls._validate_room_type(room_type)
+        
+        if room_type == RoomType.PRIVATE.value:
+            password_length = len(room_password)
+            if password_length < cls.PASSWORD_MIN_LENGTH:
+                raise ValueError(f"Room password should be at least {cls.PASSWORD_MIN_LENGTH} characters long")
+            if password_length > cls.PASSWORD_MAX_LENGTH:
+                raise ValueError(f"Room password should be at most {cls.PASSWORD_MAX_LENGTH} characters long")
     
         room_id = str(uuid.uuid4())
         return Room(room_id, room_name, owner_id, cls.DEFAULT_ROOM_RULE, room_type, room_password)
@@ -130,9 +137,40 @@ class Room:
 
         current_messages.append(message)
 
-    def update_room_rule(self, rule: str) -> str:
+    def update_room_rule(self, user_id: int, rule: str) -> str:
+        if user_id != self.owner_id:
+            raise ValueError(f"Only owner can update room rule, current owner: {self.owner_id}")
+        
+        if len(rule) > self.MAX_RULE_LENGTH:
+            raise ValueError(f"Room rule should be at most {self.MAX_RULE_LENGTH} characters long")
+        
+
+        
         self.room_rule = rule
         return self.room_rule
+    
+    def update_room_password(self, user_id: int, new_password: str) -> str:
+        if user_id != self.owner_id:
+            raise ValueError(f"Only owner can update room password, current owner: {self.owner_id}")
+        if len(new_password) < self.PASSWORD_MIN_LENGTH:
+            raise ValueError(f"Room password should be at least {self.PASSWORD_MIN_LENGTH} characters long")
+        if len(new_password) > self.PASSWORD_MAX_LENGTH:
+            raise ValueError(f"Room password should be at most {self.PASSWORD_MAX_LENGTH} characters long")
+        self.room_password = new_password
+        return self.room_password
+    
+    def change_to_rooom_type(self, target_room_type: str) -> str:
+        self._validate_room_type(target_room_type)
+
+        if target_room_type == RoomType.PUBLIC.value:
+            self.room_type = RoomType.PUBLIC.value
+            return
+        
+        if len(self.room_password) == 0:
+            raise ValueError("Room password should not be empty, please update password first")
+        self.room_type = RoomType.PRIVATE.value
+        
+        return self.room_type
     
     def to_dict(self, is_message_included: bool = False) -> dict[str, Any]:
         dict_copy = deepcopy(self.__dict__)

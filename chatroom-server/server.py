@@ -145,6 +145,7 @@ def create_room():
     room_type = request_json["room_type"]
     room_password = request_json.get("room_password", "")
     new_room = Room.create_new_room(room_type, room_name, owner_id, room_password)
+    room_manager.add_room(new_room)
     chat_room_db_manager.add_room(
         room_id= new_room.room_id, 
         owner_id= new_room.owner_id, 
@@ -153,7 +154,6 @@ def create_room():
         room_rule= new_room.room_rule, 
         room_password= new_room.room_password
     )
-    room_manager.add_room(new_room)
     return new_room.to_dict()
 
 @app.route("/delete_room", methods=["POST"])
@@ -193,6 +193,23 @@ def get_room_rule():
     room = room_manager.get_room_by_id(room_id)
     return {"room_rule_tips": CHINESE_ROOM_RULE_TIPS ,"room_rule": room.room_rule}
 
+@app.route("/update_room_rule", methods=["POST"])
+@handle_server_errors
+@login_required
+def update_room_rule():
+    request_json = request.get_json()
+    room_rule =  request_json["room_rule"] #required
+    user_id = request_json["user"]["user_id"]
+    user_name = request_json["user"]["user_name"]
+    full_id = f"{user_id}-{user_name}"
+    room_id = room_manager.get_user_location(full_id)
+    room = room_manager.get_room_by_id(room_id)
+    if room_rule == room.room_rule:
+        return "ok"
+    new_rule = room.update_room_rule(user_id,room_rule)
+    chat_room_db_manager.update_room_rule(room_id, new_rule)
+    return new_rule
+
 @app.route("/room_password", methods=["POST"])
 @handle_server_errors
 @login_required
@@ -205,29 +222,22 @@ def get_room_password():
     room = room_manager.get_room_by_id(room_id)
     return room.room_password
 
-@app.route("/update_room_rule", methods=["POST"])
+@app.route("/update_room_password", methods=["POST"])
 @handle_server_errors
 @login_required
-def update_room_rule():
+def update_room_password():
     request_json = request.get_json()
-    room_rule =  request_json["room_rule"] #required
-    char_length_limit = 500
-    if len(room_rule) > char_length_limit:
-        raise ValueError(f"Room rule should not be longer than {char_length_limit} characters")
-
+    room_password =  request_json["room_password"]
     user_id = request_json["user"]["user_id"]
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
     room_id = room_manager.get_user_location(full_id)
     room = room_manager.get_room_by_id(room_id)
-    if room_rule == room.room_rule:
+    if room.room_password == room_password:
         return "ok"
-    if user_id != room.owner_id:
-        raise ValueError(f"User {user_id} is not the owner of room {room_id}, cannot update room rule")
-    chat_room_db_manager.update_room_rule(room_id, room_rule)
-    new_rule = room.update_room_rule(room_rule)
-    return new_rule
-
+    new_password = room.update_room_password(user_id,room_password)
+    chat_room_db_manager.update_room_password(room_id, new_password)
+    return new_password
 
 @app.route("/emit_message_to_room", methods=["POST"])
 @handle_server_errors
@@ -277,6 +287,9 @@ def emit_message_to_room():
         "is_message_persist": is_message_persist
     }
     if is_message_persist:
+        room.add_message(
+            chat_message
+        )
         chat_room_db_manager.add_message(
             message_id= chat_message.message_id,
             message_type= chat_message.message_type,
@@ -285,9 +298,6 @@ def emit_message_to_room():
             content= chat_message.content,
             created_at= chat_message.created_at,
             is_memo= chat_message.is_memo
-        )
-        room.add_message(
-            chat_message
         )
 
     if is_emit:
