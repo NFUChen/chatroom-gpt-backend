@@ -111,8 +111,8 @@ class ChatRoomDataBaseManager:
     def query_all_rooms(self) -> list[dict[str, str]]:
         sql = f"""
             SELECT rooms.*, room_configs.room_rule, room_configs.room_password FROM rooms
-            LEFT JOIN room_configs
-            ON rooms.room_id = room_configs.room_id;
+            LEFT JOIN room_configs ON rooms.room_id = room_configs.room_id 
+            WHERE rooms.is_deleted = 0;
         """
         post_json = {
             "query": sql
