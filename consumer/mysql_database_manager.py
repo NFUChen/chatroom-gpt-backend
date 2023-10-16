@@ -53,7 +53,7 @@ class MySqlDataBaseManaer:
     def delete_room(self, room_id: str) -> Any:
         sql = f"UPDATE rooms SET is_deleted = 1 WHERE room_id = {room_id}"
         return self._execute(sql)
-    def insert_message(self, message_id: str, message_type:str, room_id: str, user_id: str, content: str, created_at: datetime, is_memo: str):
+    def insert_message(self, message_id: str, message_type:str, room_id: str, user_id: str, content: str, created_at: datetime, is_memo: str) -> Any:
 
         sql = "INSERT INTO chat_messages (message_id, message_type, room_id, user_id, content, created_at, is_memo) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         return self._execute(
@@ -61,7 +61,7 @@ class MySqlDataBaseManaer:
             (message_id, message_type, room_id, user_id, content, created_at.strftime(self.TIMESTAMP_FORMAT), is_memo), 
         )
     
-    def insert_embedding(self, collection_name: str, document_id: str, chunk_id: str, text: str, text_hash: str,updated_at: datetime, vector: list[float]):
+    def insert_embedding(self, collection_name: str, document_id: str, chunk_id: str, text: str, text_hash: str,updated_at: datetime, vector: list[float]) -> Any:
         '''
         collection_name VARCHAR(36) NOT NULL,
         document_id VARCHAR(36) NOT NULL,
@@ -72,5 +72,9 @@ class MySqlDataBaseManaer:
         '''
         sql = "INSERT INTO embeddings (collection_name, document_id, chunk_id, text, text_hash, updated_at, vector) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         return self._execute(sql, (collection_name, document_id, chunk_id, text, text_hash, updated_at.strftime(self.TIMESTAMP_FORMAT), json.dumps(vector)))
+    
+    def insert_personal_room(self, room_id: str, user_id: str) -> Any:
+        sql = "INSERT INTO personal_rooms (room_id, user_id) VALUES (%s, %s)"
+        return self._execute(sql, (room_id, user_id))
 
 mysqldb_manager = MySqlDataBaseManaer("mysql", "root", "chatchat-admin", "db")

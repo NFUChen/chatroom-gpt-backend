@@ -3,7 +3,6 @@ from chat_message import ChatMessage
 from room import Room
 from room_manager import RoomManager
 from api_key_load_balancer import ApiKeyLoadBalancer
-from personal_room_list_service import PersonalRoomListService
 from utils import query_api_keys
 
 def init_messages(room_id: str, message_length: int) -> dict[str, list[ChatMessage]]:
@@ -36,7 +35,3 @@ def init_room_manager() -> RoomManager:
 def init_openai_api_key_loadbalancer() -> ApiKeyLoadBalancer:
     keys = query_api_keys()
     return ApiKeyLoadBalancer(keys)
-
-
-def init_personal_room_list_service() -> PersonalRoomListService:
-    return PersonalRoomListService({})

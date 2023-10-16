@@ -10,6 +10,51 @@ class ChatRoomDataBaseManager:
         self.query_api = f"http://query_manager:5000/query"
         self.update_api = f"http://query_manager:5000/update"
         self.produce_api =  "http://producer:5000/produce"
+        
+    def __convert_to_sql_array(self, words: list[str]) -> str:
+        single_quoted_words = list(map(lambda word: f"'{word}'", words))
+        return f"({' ,'.join(single_quoted_words)})"
+
+    def __post_to_external_source(self, source_name: str, api_url: str,post_json: dict[str, Any]) -> dict[str, str]:
+        resp_json = requests.post(
+            api_url, json= post_json
+        ).json()
+        error = resp_json["error"]
+        if error is not None:
+            raise ValueError(f"{source_name}: {error}")
+        print(resp_json, flush= True)
+        return resp_json
+    
+    def __post_to_producer(self, post_json: dict[str, Any]) -> dict[str, str]:
+        return self.__post_to_external_source(
+            source_name="producer",
+            api_url= self.produce_api,
+            post_json= post_json
+        )["data"]
+    
+    def __post_to_query(self, post_json: dict[str, Any]) -> dict[str, str]:
+        return self.__post_to_external_source(
+            source_name="query_manager",
+            api_url= self.query_api,
+            post_json= post_json
+        )["data"]
+    
+    def __post_to_query_update(self, post_json: dict[str, Any]) -> dict[str, str]:
+        return self.__post_to_external_source(
+            source_name="query_manager_update",
+            api_url= self.update_api,
+            post_json= post_json
+        )["message"]
+
+    def __convert_gmt_into_utc_date(self, gmt_input_date: str) -> str:
+        gmt_format = '%a, %d %b %Y %H:%M:%S GMT'
+        utc_format = '%Y-%m-%d %H:%M:%S.%f'
+
+        input_datetime = datetime.strptime(gmt_input_date, gmt_format)
+        utc_date = input_datetime.strftime(utc_format)
+
+        return utc_date
+    
 
     def add_room(self, room_id: str, owner_id: int, room_name: str, room_type: str, room_rule: str, room_password: str) -> None:
         '''
@@ -86,49 +131,25 @@ class ChatRoomDataBaseManager:
         }
         return self.__post_to_producer(post_json)
     
-    def __convert_to_sql_array(self, words: list[str]) -> str:
-        single_quoted_words = list(map(lambda word: f"'{word}'", words))
-        return f"({' ,'.join(single_quoted_words)})"
-
-    def __post_to_external_source(self, source_name: str, api_url: str,post_json: dict[str, Any]) -> dict[str, str]:
-        resp_json = requests.post(
-            api_url, json= post_json
-        ).json()
-        error = resp_json["error"]
-        if error is not None:
-            raise ValueError(f"{source_name}: {error}")
-        print(resp_json, flush= True)
-        return resp_json
+    def add_personal_room_list(self, user_id: str, room_id: str) -> None:
+        post_json = {
+            "queue": "add_personal_room_list",
+            "data": {
+                "user_id": user_id,
+                "room_id": room_id
+            }
+        }
+        return self.__post_to_producer(post_json)
     
-    def __post_to_producer(self, post_json: dict[str, Any]) -> dict[str, str]:
-        return self.__post_to_external_source(
-            source_name="producer",
-            api_url= self.produce_api,
-            post_json= post_json
-        )["data"]
-    
-    def __post_to_query(self, post_json: dict[str, Any]) -> dict[str, str]:
-        return self.__post_to_external_source(
-            source_name="query_manager",
-            api_url= self.query_api,
-            post_json= post_json
-        )["data"]
-    
-    def __post_to_query_update(self, post_json: dict[str, Any]) -> dict[str, str]:
-        return self.__post_to_external_source(
-            source_name="query_manager_update",
-            api_url= self.update_api,
-            post_json= post_json
-        )["message"]
-
-    def __convert_gmt_into_utc_date(self, gmt_input_date: str) -> str:
-        gmt_format = '%a, %d %b %Y %H:%M:%S GMT'
-        utc_format = '%Y-%m-%d %H:%M:%S.%f'
-
-        input_datetime = datetime.strptime(gmt_input_date, gmt_format)
-        utc_date = input_datetime.strftime(utc_format)
-
-        return utc_date
+    def get_personal_room_id_list(self, user_id: str) -> list[str]:
+        sql = f"SELECT room_id FROM personal_rooms WHERE user_id = {user_id}"
+        post_json = {
+            "query": sql
+        }
+        room_ids = self.__post_to_query(post_json)
+        return [
+            room_id["room_id"] for room_id in room_ids
+        ]
     
     def query_all_rooms(self) -> list[dict[str, str]]:
         sql = f"""

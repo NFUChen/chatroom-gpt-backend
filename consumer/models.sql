@@ -98,6 +98,14 @@ CREATE TABLE
         FOREIGN KEY (room_id) REFERENCES rooms(room_id)
     );
 
+CREATE TABLE
+    IF NOT EXISTS personal_rooms (
+        room_id VARCHAR(36) PRIMARY KEY NOT NULL,
+        user_id INT NOT NULL,
+        UNIQUE (user_id, room_id),
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+    );
+
 INSERT INTO
     users (
         user_email,

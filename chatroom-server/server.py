@@ -4,7 +4,6 @@ from flask_cors import CORS
 from chat_room_utils import (
     init_room_manager, 
     init_openai_api_key_loadbalancer,
-    init_personal_room_list_service,
 )
 from utils import (
     handle_server_errors, 
@@ -21,7 +20,6 @@ from chat_room_database_manager import chat_room_db_manager
 logging.basicConfig(level=logging.DEBUG)
 room_manager = init_room_manager()
 api_key_load_balancer = init_openai_api_key_loadbalancer()
-personal_room_list_service =  init_personal_room_list_service()
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -50,6 +48,7 @@ def join_room():
     full_id = f"{user_id}-{user_name}"
 
     joined_room = room_manager.user_join_room(full_id, room_id, room_password)
+    chat_room_db_manager.add_personal_room_list(user_id, room_id)
     notification = {
         "user_id": user_id,
         "user_name": user_name,
@@ -406,14 +405,16 @@ def list_room():
     filter_room_name = request_json.get("filter_room_name", "")
     return room_manager.get_all_rooms_info(filter_room_name= filter_room_name)
 
-@app.route("/list_personal_room_list", methods = ["POST"])
+@app.route("/personal_room_list", methods = ["POST"])
 @handle_server_errors
 @login_required
-def list_personal_room_list():
+def get_personal_room_list():
     request_json = request.get_json()
     user_id = request_json["user"]["user_id"]
-
-    return personal_room_list_service.get_room_list_by_user_id(user_id)
+    room_ids = chat_room_db_manager.get_personal_room_id_list(user_id)
+    return [
+        room_manager.get_room_by_id(room_id).to_dict(is_message_included= False) for room_id in room_ids
+    ]
 
 @app.route("/list_room_members", methods = ["POST"])
 @handle_server_errors
