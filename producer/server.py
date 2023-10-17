@@ -33,12 +33,12 @@ def produce():
             continue
         missing_keys.append(key)
     if len(missing_keys) != 0:
-        return {"data": f"Missing {missing_keys}"}, 400
+        return f"Missing {missing_keys}"
 
     queue = request_json.pop("queue")
 
     producer.publish(queue, str(request_json["data"]))
-    return {"data": f"Message {request_json} published to {queue}"}, 200
+    return f"Message {request_json} published to {queue}"
 
 
 if __name__ == "__main__":
