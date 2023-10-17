@@ -100,7 +100,7 @@ CREATE TABLE
 
 CREATE TABLE
     IF NOT EXISTS personal_rooms (
-        room_id VARCHAR(36) PRIMARY KEY NOT NULL,
+        room_id VARCHAR(36) NOT NULL,
         user_id INT NOT NULL,
         UNIQUE (user_id, room_id),
         FOREIGN KEY (user_id) REFERENCES users(user_id)
