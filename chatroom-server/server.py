@@ -4,6 +4,7 @@ from flask_cors import CORS
 from chat_room_utils import (
     init_room_manager, 
     init_openai_api_key_loadbalancer,
+    init_personal_room_list_service
 )
 from utils import (
     handle_server_errors, 
@@ -20,6 +21,7 @@ from chat_room_database_manager import chat_room_db_manager
 logging.basicConfig(level=logging.DEBUG)
 room_manager = init_room_manager()
 api_key_load_balancer = init_openai_api_key_loadbalancer()
+peronsal_room_list_service = init_personal_room_list_service()
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -47,8 +49,14 @@ def join_room():
     user_name = request_json["user"]["user_name"]
     full_id = f"{user_id}-{user_name}"
 
-    joined_room = room_manager.user_join_room(full_id, room_id, room_password)
-    chat_room_db_manager.add_personal_room_list(user_id, room_id)
+
+    is_in_personal_room_list = peronsal_room_list_service.is_personal_room_of_user(user_id, room_id)
+
+    joined_room = room_manager.user_join_room(full_id, room_id, room_password, is_in_personal_room_list)
+    if not is_in_personal_room_list:
+        peronsal_room_list_service.add_peronal_room(user_id, room_id)
+        chat_room_db_manager.add_personal_room(user_id, room_id)
+    
     notification = {
         "user_id": user_id,
         "user_name": user_name,
@@ -98,13 +106,14 @@ def auto_switch_room():
     }
     
     current_room_id =  room_manager.get_user_location(full_id, raise_if_not_found= False)
+    is_in_personal_room_list = peronsal_room_list_service.is_personal_room_of_user(user_id, current_room_id)
     
     if current_room_id == target_room_id:
         target_room = room_manager.get_room_by_id(target_room_id)
         return target_room.to_dict(is_message_included= True)
     
     if current_room_id is None:
-        joined_room = room_manager.user_join_room(full_id, target_room_id, room_password)
+        joined_room = room_manager.user_join_room(full_id, target_room_id, room_password, is_in_personal_room_list)
         notification["is_join"] = True
         emit_socket_event(joined_room.get_socket_event("notification"), notification)
         emit_socket_event(joined_room.get_socket_event("number_of_people"), joined_room.number_of_people)
@@ -115,7 +124,7 @@ def auto_switch_room():
         notification["is_join"] = False
         emit_socket_event(left_room.get_socket_event("notification"), notification)
         emit_socket_event(left_room.get_socket_event("number_of_people"), left_room.number_of_people)
-        joined_room = room_manager.user_join_room(full_id, target_room_id, room_password)
+        joined_room = room_manager.user_join_room(full_id, target_room_id, room_password, is_in_personal_room_list)
         notification["is_join"] = True
         emit_socket_event(joined_room.get_socket_event("notification"), notification)
         emit_socket_event(joined_room.get_socket_event("number_of_people"), joined_room.number_of_people)
@@ -411,7 +420,7 @@ def list_room():
 def get_personal_room_list():
     request_json = request.get_json()
     user_id = request_json["user"]["user_id"]
-    room_ids = chat_room_db_manager.get_personal_room_id_list(user_id)
+    room_ids = peronsal_room_list_service.get_personal_rooms(user_id)
     return [
         room_manager.get_room_by_id(room_id).to_dict(is_message_included= False) for room_id in room_ids
     ]

@@ -131,7 +131,7 @@ class ChatRoomDataBaseManager:
         }
         return self.__post_to_producer(post_json)
     
-    def add_personal_room_list(self, user_id: str, room_id: str) -> None:
+    def add_personal_room(self, user_id: str, room_id: str) -> None:
         post_json = {
             "queue": "add_personal_room_list",
             "data": {
@@ -141,7 +141,7 @@ class ChatRoomDataBaseManager:
         }
         return self.__post_to_producer(post_json)
     
-    def get_personal_room_id_list(self, user_id: str) -> list[str]:
+    def query_personal_room_by_user_id(self, user_id: str) -> list[str]:
         sql = f"SELECT room_id FROM personal_rooms WHERE user_id = {user_id}"
         post_json = {
             "query": sql
@@ -150,6 +150,12 @@ class ChatRoomDataBaseManager:
         return [
             room_id["room_id"] for room_id in room_ids
         ]
+    def query_all_personal_rooms(self) -> list[dict[str, int | str]]:
+        sql = f"SELECT * FROM personal_rooms"
+        post_json = {
+            "query": sql
+        }
+        return self.__post_to_query(post_json)
     
     def query_all_rooms(self) -> list[dict[str, str]]:
         sql = f"""

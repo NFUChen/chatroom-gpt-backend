@@ -85,11 +85,11 @@ class Room:
     def get_ai_messages(self, last_n: int) -> list[ChatMessage]:
         return self.messages["ai"][-last_n:]
             
-    def user_join_room(self, full_user_id: str, room_password: str) -> None:
+    def user_join_room(self, full_user_id: str, room_password: str, is_in_personal_room_list: bool) -> None:
         if full_user_id in self.user_ids:
             return
         current_user_id, _ = self.__get_user_id_and_name(full_user_id)
-        if current_user_id == self.owner_id:
+        if current_user_id == self.owner_id or is_in_personal_room_list:
             self.user_ids.append(full_user_id)
             return
         
