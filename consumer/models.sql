@@ -71,15 +71,10 @@ CREATE TABLE
         chunk_id VARCHAR(36) NOT NULL,
         ## for qdrant uuid
         text TEXT NOT NULL,
-        text_hash VARCHAR(64) NOT NULL UNIQUE,
+        text_hash VARCHAR(64) NOT NULL,
         updated_at DATETIME NOT NULL ON UPDATE CURRENT_TIMESTAMP,
         vector JSON NOT NULL,
-        UNIQUE KEY `unique_key` (
-            `collection_name`,
-            `text_hash`
-        ),
-        INDEX (collection_name),
-        INDEX (document_id),
+        UNIQUE (collection_name, text_hash),
         FOREIGN KEY (collection_name) REFERENCES rooms(room_id)
     );
 

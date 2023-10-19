@@ -8,7 +8,7 @@ from chatbot import ChatBot
 from utils import (
     handle_server_errors, 
     get_hash,
-    is_duplicate_embedding,
+    get_duplicate_embedding,
     query_all_embeddings,
     create_memorization_prompt,
     emit_socket_event
@@ -114,9 +114,19 @@ def memo():
     document_id = str(uuid.uuid4())
     for chunk in chunks:
         chunk_hash = get_hash(chunk)
-        if is_duplicate_embedding(chunk_hash):
-            continue
-        embedding = embedding_service.get_embedding(chunk, document_id, chunk_hash) 
+        embedding_dict = get_duplicate_embedding(chunk_hash)
+        embedding = (
+            embedding_service.get_embedding(chunk, document_id, chunk_hash) 
+            if embedding_dict is None
+            else Embedding(
+            document_id= document_id,
+            chunk_id= embedding_dict["chunk_id"],
+            text= embedding_dict["text"],
+            text_hash= embedding_dict["text_hash"],
+            updated_at= embedding_dict["updated_at"],
+            vector= embedding_dict["vector"]) 
+             
+            )
         embeddings.append(embedding)
     if len(embeddings) == 0:
         raise ValueError("All embeddings are duplicates")

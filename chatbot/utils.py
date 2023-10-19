@@ -1,7 +1,6 @@
 from typing import Literal, Any
 import traceback
 import functools
-import os
 import datetime
 import hashlib
 import requests
@@ -157,25 +156,26 @@ def convert_messages(messages: list[dict[str, str]]) -> list[dict[str, str]]:
 def get_hash(string: str) -> str:
     return hashlib.sha256(string.encode("utf-8")).hexdigest()
 
-def is_duplicate_embedding(text_hash: str) -> str:
+def get_duplicate_embedding(text_hash: str) -> None | dict[str, str | list[float] | datetime.datetime]:
+    source_format = '%a, %d %b %Y %H:%M:%S %Z'
+    target_format = "%Y-%m-%d %H:%M:%S.%f"
     sql = f'''
-    SELECT CASE 
-    WHEN subquery.count = 1 THEN TRUE 
-    ELSE FALSE 
-    END 
-    AS is_exists
-    FROM (
-    SELECT COUNT(*) AS "count"
-    FROM embeddings
+    SELECT * FROM embeddings
     WHERE text_hash = '{text_hash}'
-    ) AS subquery;
     '''
     post_json = {
             "query": sql
     }
-    return requests.post(
+    embedding_dicts = requests.post(
         query_api, json= post_json
-    ).json()["data"].pop()["is_exists"] == 1
+    ).json()["data"]
+    if len(embedding_dicts) == 0:
+        return
+    
+    embedding_dict = embedding_dicts.pop()
+    embedding_dict["vector"] = ast.literal_eval(embedding_dict["vector"])
+    embedding_dict["updated_at"] = datetime.datetime.strptime(embedding_dict["updated_at"], source_format).strftime(target_format)
+    return embedding_dict
 
 def query_ai_user_dict() -> dict[str, str | int]:
     sql = "SELECT * FROM users WHERE user_id = 1"
@@ -191,12 +191,12 @@ def query_all_embeddings() -> list[dict[str, str | list[float]]]:
     post_json = {
             "query": sql
     }
-    embeddings = requests.post(
+    embedding_dicts = requests.post(
         query_api, json= post_json
     ).json()["data"]
-    for embedding in embeddings:
-        embedding["vector"] = ast.literal_eval(embedding["vector"])
-    return embeddings
+    for embedding_dict in embedding_dicts:
+        embedding_dict["vector"] = ast.literal_eval(embedding_dict["vector"])
+    return embedding_dicts
 
 def emit_socket_event(socket_event: str, data: Any) -> None:
     payload = {
