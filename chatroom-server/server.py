@@ -106,7 +106,7 @@ def auto_switch_room():
     }
     
     current_room_id =  room_manager.get_user_location(full_id, raise_if_not_found= False)
-    is_in_personal_room_list = peronsal_room_list_service.is_personal_room_of_user(user_id, current_room_id)
+    is_in_personal_room_list = peronsal_room_list_service.is_personal_room_of_user(user_id, target_room_id)
     
     if current_room_id == target_room_id:
         target_room = room_manager.get_room_by_id(target_room_id)
